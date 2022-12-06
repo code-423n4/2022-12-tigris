@@ -45,7 +45,7 @@ Under "SPONSORS ADD INFO HERE" heading below, include the following:
 
 ---
 
-# Tigris contest details
+# Tigris Trade contest details
 - Total Prize Pool: $90,500 USDC
   - HM awards: $63,750 USDC 
   - QA report awards: $7,500 USDC 
