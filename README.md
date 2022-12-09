@@ -11,6 +11,12 @@
 - Starts December 09, 2022 20:00 UTC
 - Ends December 16, 2022 20:00 UTC
 
+## C4udit / Publicly Known Issues
+
+The C4audit output for the contest can be found [here](https://gist.github.com/Picodes/341209cd106cfdaaba80610fc76cbe56) within an hour of contest opening.
+
+_Note for C4 wardens: Anything included in the C4udit output is considered a publicly known issue and is ineligible for awards._
+
 # Overview
 
 Tigris is a leveraged trading platform that utilizes price data signed by oracles off-chain to provide atomic trades and real-time
