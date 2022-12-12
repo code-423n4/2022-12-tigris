@@ -73,6 +73,7 @@ through an allocation of Governance NFTs, which get distributed based on amount 
 7. contracts/utils/ExcessivelySafeCall.sol
 8. contracts/mock/*
 9. External libraries: ``@openzeppelin/*``
+10. deployments folder (note: the source code of the deployments is different from the code currently being audited)
 
 # Additional Context
 
