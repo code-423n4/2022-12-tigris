@@ -60,7 +60,7 @@ through an allocation of Governance NFTs, which get distributed based on amount 
 | contracts/interfaces/IPosition.sol                       | 48   | Position NFT interface                                                                                          |                                                         |
 | contracts/interfaces/IReferrals.sol                      | 7    | Referrals contract interface                                                                                    |                                                         |
 | contracts/interfaces/IStableVault.sol                    | 7    | StableVault interface                                                                                           |                                                         |
-| contracts/interfaces/IPosition.sol                       | 101  | ITrading interface                                                                                              |                                                         |
+| contracts/interfaces/ITrading.sol                       | 101  | ITrading interface                                                                                              |                                                         |
 
 ## Out of scope
 
