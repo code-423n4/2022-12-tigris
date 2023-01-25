@@ -88,6 +88,7 @@ contract Lock is Ownable{
     ) public {
         address _asset = claim(_id);
         IERC20(_asset).transferFrom(msg.sender, address(this), _amount);
+        totalLocked[_asset] += _amount;
         bondNFT.extendLock(_id, _asset, _amount, _period, msg.sender);
     }
 

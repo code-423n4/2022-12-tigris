@@ -467,6 +467,23 @@ describe("Bonds", function () {
       expect(period).to.be.equals(20); // New time
       expect(expired).to.be.equals(false);
     });
+    it("Releasing a lock after extending", async function () {
+      await stabletoken.connect(owner).mintFor(user.address, ethers.utils.parseEther("110"));
+      // Lock 100 for 9 days
+      await lock.connect(user).lock(StableToken.address, ethers.utils.parseEther("100"), 9);
+
+      // Lock another 10
+      await lock.connect(user).extendLock(1, ethers.utils.parseEther("10"), 0);
+
+      await network.provider.send("evm_increaseTime", [864000]); // Skip 10 days
+      await network.provider.send("evm_mine");
+
+      // Try to release 110 after bond has expired -> Underflow
+      expect(await lock.totalLocked(stabletoken.address)).to.be.equals(ethers.utils.parseEther("110"));
+      await lock.connect(user).release(1);
+      expect(await stabletoken.balanceOf(user.address)).to.be.equals(ethers.utils.parseEther("110"));
+      expect(await lock.totalLocked(stabletoken.address)).to.be.equals(0);
+  });
   });
   describe("Bond transfers", function () {
     it("Bond can only transferred if epoch is updated", async function () {
