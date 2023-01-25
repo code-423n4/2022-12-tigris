@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { deployments, ethers } = require("hardhat");
 const { parseEther } = ethers.utils;
 
-describe("Position", function () {
+describe.only("Position", function () {
 
   let position;
 
@@ -378,10 +378,10 @@ describe("Position", function () {
           StableToken.address
         ]
       );
-      await network.provider.send("evm_setNextBlockTimestamp", [1671408000]); // time
+      await network.provider.send("evm_setNextBlockTimestamp", [2000000000]); // time
       await network.provider.send("evm_mine");
       await position.connect(Minter).updateFunding(0, StableToken.address, parseEther("3000000"), parseEther("1000000"), 3e9, 0); // 3M longOi, 1M shortOi, 30% funding rate
-      await network.provider.send("evm_setNextBlockTimestamp", [1702944010]); // time + 1 year
+      await network.provider.send("evm_setNextBlockTimestamp", [2031536010]); // time + 1 year
       await network.provider.send("evm_mine");
       [,,,,,,,,,,,accInterest] = await position.trades(1);
       expect(parseInt(accInterest/1e18)).to.equal(-200000); // Not exactly 200_000e18 because of division by 31_536_000 (seconds in a year)
@@ -401,16 +401,16 @@ describe("Position", function () {
           StableToken.address
         ]
       );
-      await network.provider.send("evm_setNextBlockTimestamp", [1671408000]); // time
+      await network.provider.send("evm_setNextBlockTimestamp", [2000000000]); // time
       await network.provider.send("evm_mine");
       await position.connect(Minter).updateFunding(0, StableToken.address, parseEther("3000000"), parseEther("1000000"), 3e9, 0); // 3M longOi, 1M shortOi, 30% funding rate
-      await network.provider.send("evm_setNextBlockTimestamp", [1702944010]); // time + 1 year
+      await network.provider.send("evm_setNextBlockTimestamp", [2031536010]); // time + 1 year
       await network.provider.send("evm_mine");
       [,,,,,,,,,,,accInterest] = await position.trades(1);
       expect(parseInt(accInterest/1e18)).to.equal(600000); // Not exactly 600_000e18 because of division by 31_536_000 (seconds in a year)
     });
     it("accInterest change after partial close", async function () {
-      await network.provider.send("evm_setNextBlockTimestamp", [1671408000]); // time
+      await network.provider.send("evm_setNextBlockTimestamp", [2000000000]); // time
       await network.provider.send("evm_mine");
       await position.connect(Minter).updateFunding(0, StableToken.address, parseEther("10000"), 0, 5e8, 0); // 10k longOi, 0 shortOi, 5% funding rate
       await position.connect(Minter).mint(
@@ -429,7 +429,7 @@ describe("Position", function () {
       );
       [,,,,,,,,,,,accInterestFirst] = await position.trades(1);
       expect(parseInt(accInterestFirst/1e18)).to.equal(0);
-      await network.provider.send("evm_setNextBlockTimestamp", [1702944000]); // time + 1 year
+      await network.provider.send("evm_setNextBlockTimestamp", [2031536010]); // time + 1 year
       await network.provider.send("evm_mine");
       await position.connect(Minter).updateFunding(0, StableToken.address, parseEther("20000"), 0, 5e8, 0); // 20k longOi, 0 shortOi, 5% funding rate
       await position.connect(Minter).mint(
@@ -448,7 +448,7 @@ describe("Position", function () {
       );
       [,,,,,,,,,,,accInterestBefore] = await position.trades(2);
       expect(parseInt(accInterestBefore/1e18)).to.equal(0); // Not exactly zero because a couple seconds pass during test
-      await network.provider.send("evm_setNextBlockTimestamp", [1734490000]); // time + 2 years
+      await network.provider.send("evm_setNextBlockTimestamp", [2063073000]); // time + 2 years
       await network.provider.send("evm_mine");
       [,,,,,,,,,,,accInterest] = await position.trades(2);
       expect(parseInt(accInterest/1e18)).to.equal(-500);
@@ -476,7 +476,7 @@ describe("Position", function () {
       expect(parseInt(accInterest2/1e18)).to.equal(-100);
       [,,,,,,,,,,,accInterest3] = await position.trades(3);
       expect(parseInt(accInterest3/1e18)).to.equal(0);
-      await network.provider.send("evm_setNextBlockTimestamp", [1766050000]); // time + 3 years
+      await network.provider.send("evm_setNextBlockTimestamp", [2094610000]); // time + 3 years
       await network.provider.send("evm_mine");
       [,,,,,,,,,,,accInterest4] = await position.trades(2);
       expect(parseInt(accInterest4/1e18)).to.equal(-116);
@@ -554,10 +554,10 @@ describe("Position", function () {
           StableToken.address
         ]
       );
-      await network.provider.send("evm_setNextBlockTimestamp", [1671408000]); // time
+      await network.provider.send("evm_setNextBlockTimestamp", [2000000000]); // time
       await network.provider.send("evm_mine");
       await position.connect(Minter).updateFunding(0, StableToken.address, parseEther("3000000"), parseEther("1000000"), 3e9, 5e9); // 3M longOi, 1M shortOi, 30% funding rate, 50% vault
-      await network.provider.send("evm_setNextBlockTimestamp", [1702944010]); // time + 1 year
+      await network.provider.send("evm_setNextBlockTimestamp", [2031536010]); // time + 1 year
       await network.provider.send("evm_mine");
       [,,,,,,,,,,,accInterest] = await position.trades(1);
       expect(parseInt(accInterest/1e18)).to.equal(-200000); // Not exactly 200_000e18 because of division by 31_536_000 (seconds in a year)
@@ -577,16 +577,16 @@ describe("Position", function () {
           StableToken.address
         ]
       );
-      await network.provider.send("evm_setNextBlockTimestamp", [1671408000]); // time
+      await network.provider.send("evm_setNextBlockTimestamp", [2000000000]); // time
       await network.provider.send("evm_mine");
       await position.connect(Minter).updateFunding(0, StableToken.address, parseEther("3000000"), parseEther("1000000"), 3e9, 5e9); // 3M longOi, 1M shortOi, 30% funding rate, 50% vault
-      await network.provider.send("evm_setNextBlockTimestamp", [1702944010]); // time + 1 year
+      await network.provider.send("evm_setNextBlockTimestamp", [2031536010]); // time + 1 year
       await network.provider.send("evm_mine");
       [,,,,,,,,,,,accInterest] = await position.trades(1);
       expect(parseInt(accInterest/1e18)).to.equal(300000); // Not exactly 300_000e18 because of division by 31_536_000 (seconds in a year)
     });
     it("accInterest change after partial close", async function () {
-      await network.provider.send("evm_setNextBlockTimestamp", [1671408000]); // time
+      await network.provider.send("evm_setNextBlockTimestamp", [2000000000]); // time
       await network.provider.send("evm_mine");
       await position.connect(Minter).updateFunding(0, StableToken.address, parseEther("10000"), 0, 5e8, 5e9); // 10k longOi, 0 shortOi, 5% funding rate, 50% vault
       await position.connect(Minter).mint(
@@ -605,7 +605,7 @@ describe("Position", function () {
       );
       [,,,,,,,,,,,accInterestFirst] = await position.trades(1);
       expect(parseInt(accInterestFirst/1e18)).to.equal(0);
-      await network.provider.send("evm_setNextBlockTimestamp", [1702944000]); // time + 1 year
+      await network.provider.send("evm_setNextBlockTimestamp", [2031536010]); // time + 1 year
       await network.provider.send("evm_mine");
       await position.connect(Minter).updateFunding(0, StableToken.address, parseEther("20000"), 0, 5e8, 5e9); // 20k longOi, 0 shortOi, 5% funding rate, 50% vault
       await position.connect(Minter).mint(
@@ -624,7 +624,7 @@ describe("Position", function () {
       );
       [,,,,,,,,,,,accInterestBefore] = await position.trades(2);
       expect(parseInt(accInterestBefore/1e18)).to.equal(0); // Not exactly zero because a couple seconds pass during test
-      await network.provider.send("evm_setNextBlockTimestamp", [1734490000]); // time + 2 years
+      await network.provider.send("evm_setNextBlockTimestamp", [2063072020]); // time + 2 years
       await network.provider.send("evm_mine");
       [,,,,,,,,,,,accInterest] = await position.trades(2);
       expect(parseInt(accInterest/1e18)).to.equal(-500);
@@ -652,7 +652,7 @@ describe("Position", function () {
       expect(parseInt(accInterest2/1e18)).to.equal(-100);
       [,,,,,,,,,,,accInterest3] = await position.trades(3);
       expect(parseInt(accInterest3/1e18)).to.equal(0);
-      await network.provider.send("evm_setNextBlockTimestamp", [1766050000]); // time + 3 years
+      await network.provider.send("evm_setNextBlockTimestamp", [2094609000]); // time + 3 years
       await network.provider.send("evm_mine");
       [,,,,,,,,,,,accInterest4] = await position.trades(2);
       expect(parseInt(accInterest4/1e18)).to.equal(-116);
