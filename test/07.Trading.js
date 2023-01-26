@@ -1106,6 +1106,39 @@ describe("Trading", function () {
     /**
      * Reverting SL/TP tests
      */
+    it("Executing TP before block delay has passed should revert", async function () {
+      // Open position
+      trading.connect(owner).setBlockDelay(10); // 10 block delay
+      let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("22000"), parseEther("0"), ethers.constants.HashZero];
+      let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let openMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+        )
+      );
+      let openSig = await node.signMessage(
+        Buffer.from(openMessage.substring(2), 'hex')
+      );
+      
+      let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
+      await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
+      expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Trade has opened
+
+      let closePriceData = [node.address, 0, parseEther("22000"), 0, 2000000000, false];
+      let closeMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("22000"), 0, 2000000000, false]
+        )
+      );
+      let closeSig = await node.signMessage(
+        Buffer.from(closeMessage.substring(2), 'hex')
+      );
+      
+      // Attempt TP execution
+      await expect(trading.connect(user).limitClose(1, true, closePriceData, closeSig)).to.be.revertedWith("0"); // Revert in _checkDelay
+    });
     it("Executing an unmet long TP should revert", async function () {
       // Open position
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("30000"), parseEther("0"), ethers.constants.HashZero];

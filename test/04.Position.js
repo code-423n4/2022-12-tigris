@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { deployments, ethers } = require("hardhat");
 const { parseEther } = ethers.utils;
 
-describe.only("Position", function () {
+describe("Position", function () {
 
   let position;
 

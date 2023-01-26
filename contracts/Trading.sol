@@ -460,6 +460,7 @@ contract Trading is MetaContext, ITrading {
     {
         _validateProxy(_trader);
         _checkOwner(_id, _trader);
+        _checkDelay(_id, true);
         IPosition.Trade memory _trade = position.trades(_id);
         if (_trade.orderType != 0) revert("4"); //IsLimit
         if (_type) {
@@ -570,7 +571,9 @@ contract Trading is MetaContext, ITrading {
     )
         external
     {
-        _checkDelay(_id, false);
+        if (_tp) {
+            _checkDelay(_id, false);
+        }
         (uint _limitPrice, address _tigAsset) = tradingExtension._limitClose(_id, _tp, _priceData, _signature);
         _closePosition(_id, DIVISION_CONSTANT, _limitPrice, address(0), _tigAsset, true);
     }
