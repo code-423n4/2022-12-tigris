@@ -1686,9 +1686,19 @@ describe("Trading", function () {
     });
     it("Add margin should revert if on limit order", async function () {
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
+      let priceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let message = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+        )
+      );
+      let sig = await node.signMessage(
+        Buffer.from(message.substring(2), 'hex')
+      );
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
       await trading.connect(owner).initiateLimitOrder(TradeInfo, 1, parseEther("20000"), PermitData, owner.address);
-      await expect(trading.connect(owner).addMargin(1, StableToken.address, StableVault.address, parseEther("1000"), PermitData, owner.address)).to.be.revertedWith("");
+      await expect(trading.connect(owner).addMargin(1, StableVault.address, StableToken.address, parseEther("1000"), priceData, sig, PermitData, owner.address)).to.be.revertedWith("");
     });
     it("Add margin should revert if leverage goes below min leverage", async function () {
       await stabletoken.connect(owner).setMinter(owner.address, true);
@@ -1707,7 +1717,7 @@ describe("Trading", function () {
       
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
       await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
-      await expect(trading.connect(owner).addMargin(1, StableToken.address, StableVault.address, parseEther("1000000"), PermitData, owner.address)).to.be.revertedWith("!lev");
+      await expect(trading.connect(owner).addMargin(1, StableVault.address, StableToken.address, parseEther("1000000"), openPriceData, openSig, PermitData, owner.address)).to.be.revertedWith("!lev");
     });
     it("Add margin with non-tigAsset", async function () {
       await trading.connect(owner).setFees(true,0,0,0,0,0); // Easier to calculate without fees
@@ -1726,7 +1736,7 @@ describe("Trading", function () {
       
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
       await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
-      await trading.connect(owner).addMargin(1, MockDAI.address, StableVault.address, parseEther("1000"), [0, 0, 0, ethers.constants.HashZero, ethers.constants.HashZero, false], owner.address);
+      await trading.connect(owner).addMargin(1, StableVault.address, MockDAI.address, parseEther("1000"), openPriceData, openSig, [0, 0, 0, ethers.constants.HashZero, ethers.constants.HashZero, false], owner.address);
       let [margin,leverage,,,,,,,,,,] = await position.trades(1);
       expect(margin).to.equal(parseEther("2000"));
       expect(leverage).to.equal(parseEther("5"));
@@ -1750,7 +1760,7 @@ describe("Trading", function () {
       
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
       await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
-      await trading.connect(owner).addMargin(1, StableToken.address, StableVault.address, parseEther("1000"), [0, 0, 0, ethers.constants.HashZero, ethers.constants.HashZero, false], owner.address);
+      await trading.connect(owner).addMargin(1, StableVault.address, StableToken.address, parseEther("1000"), openPriceData, openSig, [0, 0, 0, ethers.constants.HashZero, ethers.constants.HashZero, false], owner.address);
       expect(await stabletoken.balanceOf(owner.address)).to.equal(parseEther("0")); // Should no tigAsset left
       let [margin,leverage,,,,,,,,,,] = await position.trades(1);
       expect(margin).to.equal(parseEther("2000"));
@@ -1776,7 +1786,7 @@ describe("Trading", function () {
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
       await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
       let PermitSig = await signERC2612Permit(owner, MockDAI.address, owner.address, Trading.address, ethers.constants.MaxUint256);
-      await trading.connect(owner).addMargin(1, MockDAI.address, StableVault.address, parseEther("1000"), [PermitSig.deadline, ethers.constants.MaxUint256, PermitSig.v, PermitSig.r, PermitSig.s, true], owner.address);
+      await trading.connect(owner).addMargin(1, StableVault.address, MockDAI.address, parseEther("1000"), openPriceData, openSig, [PermitSig.deadline, ethers.constants.MaxUint256, PermitSig.v, PermitSig.r, PermitSig.s, true], owner.address);
       let [margin,leverage,,,,,,,,,,] = await position.trades(1);
       expect(margin).to.equal(parseEther("2000"));
       expect(leverage).to.equal(parseEther("5"));
@@ -1979,6 +1989,97 @@ describe("Trading", function () {
       expect(margin).to.equal(parseEther("3980")); // Margin combined
       expect(leverage).to.equal(parseEther("5")); // Leverage stays the same
       expect(openPrice).to.equal(parseEther("12500")); // Open price combined proportionally
+    });
+    it("Add margin should revert if current PnL >= maxPnL% - 100%", async function () {
+      await pairscontract.connect(owner).setAssetBaseFundingRate(0, 0);
+      await trading.connect(owner).setMaxWinPercent(6e10); // +500% max win, should revert with +400%
+      let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("2"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
+      let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let openMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+        )
+      );
+      let openSig = await node.signMessage(
+        Buffer.from(openMessage.substring(2), 'hex')
+      );
+      let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
+      await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
+
+      // +400% PnL
+      let newPriceData = [node.address, 0, parseEther("30000"), 0, 2000000000, false];
+      let newMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("30000"), 0, 2000000000, false]
+        )
+      );
+      let newSig = await node.signMessage(
+        Buffer.from(newMessage.substring(2), 'hex')
+      );
+      await expect(trading.connect(owner).addMargin(1, StableVault.address, StableToken.address, parseEther("100"), newPriceData, newSig, PermitData, owner.address)).to.be.revertedWith("CloseToMaxPnL");
+    });
+    it("Remove margin should revert if current PnL >= maxPnL% - 100%", async function () {
+      await pairscontract.connect(owner).setAssetBaseFundingRate(0, 0);
+      await trading.connect(owner).setMaxWinPercent(6e10); // +500% max win, should revert with +400%
+      let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("2"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
+      let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let openMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+        )
+      );
+      let openSig = await node.signMessage(
+        Buffer.from(openMessage.substring(2), 'hex')
+      );
+      let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
+      await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
+
+      // +400% PnL
+      let newPriceData = [node.address, 0, parseEther("30000"), 0, 2000000000, false];
+      let newMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("30000"), 0, 2000000000, false]
+        )
+      );
+      let newSig = await node.signMessage(
+        Buffer.from(newMessage.substring(2), 'hex')
+      );
+      await expect(trading.connect(owner).removeMargin(1, StableVault.address, StableToken.address, parseEther("100"), newPriceData, newSig, owner.address)).to.be.revertedWith("CloseToMaxPnL");
+    });
+    it("Adding to position should revert if current PnL >= maxPnL% - 100%", async function () {
+      await pairscontract.connect(owner).setAssetBaseFundingRate(0, 0);
+      await trading.connect(owner).setMaxWinPercent(6e10); // +500% max win, should revert with +400%
+      let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("2"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
+      let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let openMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+        )
+      );
+      let openSig = await node.signMessage(
+        Buffer.from(openMessage.substring(2), 'hex')
+      );
+      
+      // +400% PnL
+      let addPriceData = [node.address, 0, parseEther("30000"), 0, 2000000000, false];
+      let addMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("30000"), 0, 2000000000, false]
+        )
+      );
+      let addSig = await node.signMessage(
+        Buffer.from(addMessage.substring(2), 'hex')
+      );
+
+      let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
+      await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
+      await expect(trading.connect(owner).addToPosition(1, parseEther("100"), addPriceData, addSig, StableVault.address, StableToken.address, PermitData, owner.address)).to.be.revertedWith("CloseToMaxPnL");
     });
   });
   describe("PnL calculations", function () {

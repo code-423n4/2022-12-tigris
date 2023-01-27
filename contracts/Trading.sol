@@ -91,6 +91,8 @@ contract Trading is MetaContext, ITrading {
     error BadClosePercent();
     error NoPrice();
     error LiqThreshold();
+    error CloseToMaxPnL();
+    error BadSetter();
 
     uint constant private DIVISION_CONSTANT = 1e10; // 100%
     uint private constant liqPercent = 9e9; // 90%
@@ -271,6 +273,11 @@ contract Trading is MetaContext, ITrading {
         tradingExtension.validateTrade(_trade.asset, _trade.tigAsset, _trade.margin + _addMargin, _trade.leverage);
         _checkVault(_stableVault, _marginAsset);
         if (_trade.orderType != 0) revert("4"); //IsLimit
+        (uint256 _price,) = tradingExtension.getVerifiedPrice(_trade.asset, _priceData, _signature, _trade.direction ? 1 : 2);
+        (,int256 _payout) = TradingLibrary.pnl(_trade.direction, _priceData.price, _trade.price, _trade.margin, _trade.leverage, _trade.accInterest);
+        unchecked {
+            if(maxWinPercent != 0 && _payout >= int256(_trade.margin*(maxWinPercent-DIVISION_CONSTANT)/DIVISION_CONSTANT)) revert CloseToMaxPnL();
+        }
         uint _fee = _handleOpenFees(_trade.asset, _addMargin*_trade.leverage/1e18, _trader, _trade.tigAsset, false);
         _handleDeposit(
             _trade.tigAsset,
@@ -282,7 +289,6 @@ contract Trading is MetaContext, ITrading {
         );
         position.setAccInterest(_id);
         unchecked {
-            (uint256 _price,) = tradingExtension.getVerifiedPrice(_trade.asset, _priceData, _signature, _trade.direction ? 1 : 2);
             uint _positionSize = (_addMargin - _fee) * _trade.leverage / 1e18;
             if (_trade.direction) {
                 tradingExtension.modifyLongOi(_trade.asset, _trade.tigAsset, true, _positionSize);
@@ -369,17 +375,21 @@ contract Trading is MetaContext, ITrading {
 
     /**
      * @param _id position id
-     * @param _marginAsset Token being used to add to the position
      * @param _stableVault StableVault address
+     * @param _marginAsset Token being used to add to the position
      * @param _addMargin margin amount being added to the position
+     * @param _priceData verifiable off-chain price data
+     * @param _signature node signature
      * @param _permitData data and signature needed for token approval
      * @param _trader address the trade is initiated for
      */
     function addMargin(
         uint256 _id,
-        address _marginAsset,
         address _stableVault,
+        address _marginAsset,
         uint256 _addMargin,
+        PriceData calldata _priceData,
+        bytes calldata _signature,
         ERC20PermitData calldata _permitData,
         address _trader
     )
@@ -389,6 +399,11 @@ contract Trading is MetaContext, ITrading {
         _checkOwner(_id, _trader);
         _checkVault(_stableVault, _marginAsset);
         IPosition.Trade memory _trade = position.trades(_id);
+        tradingExtension.getVerifiedPrice(_trade.asset, _priceData, _signature, 0);
+        (,int256 _payout) = TradingLibrary.pnl(_trade.direction, _priceData.price, _trade.price, _trade.margin, _trade.leverage, _trade.accInterest);
+        unchecked {
+            if(maxWinPercent != 0 && _payout >= int256(_trade.margin*(maxWinPercent-DIVISION_CONSTANT)/DIVISION_CONSTANT)) revert CloseToMaxPnL();
+        }
         if (_trade.orderType != 0) revert(); //IsLimit
         IPairsContract.Asset memory asset = pairsContract.idToAsset(_trade.asset);
         _handleDeposit(_trade.tigAsset, _marginAsset, _addMargin, _stableVault, _permitData, _trader);
@@ -426,12 +441,15 @@ contract Trading is MetaContext, ITrading {
         _checkVault(_stableVault, _outputToken);
         IPosition.Trade memory _trade = position.trades(_id);
         if (_trade.orderType != 0) revert(); //IsLimit
+        (uint _assetPrice,) = tradingExtension.getVerifiedPrice(_trade.asset, _priceData, _signature, 0);
+        (,int256 _payout) = TradingLibrary.pnl(_trade.direction, _assetPrice, _trade.price, _trade.margin, _trade.leverage, _trade.accInterest);
+        unchecked {
+            if(maxWinPercent != 0 && _payout >= int256(_trade.margin*(maxWinPercent-DIVISION_CONSTANT)/DIVISION_CONSTANT)) revert CloseToMaxPnL();
+        }
         IPairsContract.Asset memory asset = pairsContract.idToAsset(_trade.asset);
         uint256 _newMargin = _trade.margin - _removeMargin;
         uint256 _newLeverage = _trade.margin * _trade.leverage / _newMargin;
         if (_newLeverage > asset.maxLeverage) revert("!lev");
-        (uint _assetPrice,) = tradingExtension.getVerifiedPrice(_trade.asset, _priceData, _signature, 0);
-        (,int256 _payout) = TradingLibrary.pnl(_trade.direction, _assetPrice, _trade.price, _newMargin, _newLeverage, _trade.accInterest);
         unchecked {
             if (_payout <= int256(_newMargin*(DIVISION_CONSTANT-liqPercent)/DIVISION_CONSTANT)) revert LiqThreshold();
         }
@@ -923,7 +941,7 @@ contract Trading is MetaContext, ITrading {
     }
 
     /**
-     * @dev Sets max payout % compared to margin
+     * @dev Sets max payout % compared to margin, minimum +500% PnL
      * @param _maxWinPercent payout %
      */
     function setMaxWinPercent(
@@ -932,6 +950,7 @@ contract Trading is MetaContext, ITrading {
         external
         onlyOwner
     {
+        if (_maxWinPercent != 0 && _maxWinPercent < 6*DIVISION_CONSTANT) revert BadSetter();
         maxWinPercent = _maxWinPercent;
     }
 

@@ -47,9 +47,11 @@ interface ITrading {
 
     function addMargin(
         uint256 _id,
-        address _marginAsset,
         address _stableVault,
+        address _marginAsset,
         uint256 _addMargin,
+        PriceData calldata _priceData,
+        bytes calldata _signature,
         ERC20PermitData calldata _permitData,
         address _trader
     ) external;
