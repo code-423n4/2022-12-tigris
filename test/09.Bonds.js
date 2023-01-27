@@ -66,6 +66,9 @@ describe("Bonds", function () {
     it("Non-owner editing asset in lock should revert", async function () {
       await expect(lock.connect(user).editAsset(stabletoken.address, false)).to.be.revertedWith("Ownable: caller is not the owner");
     });
+    it("Non-owner rescuing tokens in lock should revert", async function () {
+      await expect(lock.connect(user).rescue(stabletoken.address)).to.be.revertedWith("Ownable: caller is not the owner");
+    });
   });
   describe("Manager permissions", function () {
     it("Non-manager creating a lock should revert", async function () {
@@ -558,6 +561,33 @@ describe("Bonds", function () {
       await lock.connect(user).lock(StableToken.address, ethers.utils.parseEther("1000"), 100);
       expect(await bond.tokenURI(1)).to.equal("ipfs://abc.xyz/1");
       expect(await bond.tokenURI(2)).to.equal("ipfs://abc.xyz/2");
+    });
+  });
+  describe("Recovering NFTs", function () {
+    it("Non-owner recovering NFTs should revert", async function () {
+      await expect(lock.connect(user).sendNFTs([1])).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+    it("Owner should be able to recover NFTs", async function () {
+      expect(await govnft.balanceOf(owner.address)).to.be.equals(0);
+      expect(await govnft.balanceOf(lock.address)).to.be.equals(1);
+      await lock.connect(owner).sendNFTs([1]);
+      expect(await govnft.balanceOf(owner.address)).to.be.equals(1);
+      expect(await govnft.balanceOf(lock.address)).to.be.equals(0);
+    });
+  });
+  describe("Rescuing stuck tokens", function () {
+    it("Owner rescuing stuck tokens from Lock.sol should send the correct amount of tokens", async function () {
+      await stabletoken.connect(owner).mintFor(user.address, ethers.utils.parseEther("100"));
+      await lock.connect(user).lock(StableToken.address, ethers.utils.parseEther("100"), 10);
+      await bond.connect(owner).setAllowedAsset(StableToken.address, false);
+      await stabletoken.connect(owner).mintFor(owner.address, ethers.utils.parseEther("1000"));
+      await govnft.connect(owner).distribute(stabletoken.address, ethers.utils.parseEther("1000"));
+      await lock.connect(owner).claimGovFees();
+      expect(await lock.totalLocked(StableToken.address)).to.be.equals(ethers.utils.parseEther("100"));
+      expect(await stabletoken.balanceOf(Lock.address)).to.be.equals(ethers.utils.parseEther("1100"));
+      await lock.connect(owner).rescue(StableToken.address);
+      expect(await stabletoken.balanceOf(owner.address)).to.be.equals(ethers.utils.parseEther("1000"));
+      expect(await stabletoken.balanceOf(Lock.address)).to.be.equals(ethers.utils.parseEther("100"));
     });
   });
 });

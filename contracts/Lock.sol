@@ -141,4 +141,15 @@ contract Lock is Ownable{
     ) external onlyOwner() {
         govNFT.safeTransferMany(msg.sender, _ids);
     }
+
+    /**
+     * @notice Owner can rescue tokens that are stuck in this contract
+     * @param _token token address
+     */
+    function rescue(
+        address _token
+    ) external onlyOwner() {
+        uint256 _toRescue = IERC20(_token).balanceOf(address(this)) - totalLocked[_token];
+        IERC20(_token).transfer(owner(), _toRescue);
+    }
 }
