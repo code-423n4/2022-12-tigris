@@ -34,19 +34,17 @@ library TradingLibrary {
     * @return _payout payout trader should get
     */
     function pnl(bool _direction, uint _currentPrice, uint _price, uint _margin, uint _leverage, int256 accInterest) external pure returns (uint256 _positionSize, int256 _payout) {
-        unchecked {
-            uint _initPositionSize = _margin * _leverage / 1e18;
-            if (_direction && _currentPrice >= _price) {
-                _payout = int256(_margin) + int256(_initPositionSize * (1e18 * _currentPrice / _price - 1e18)/1e18) + accInterest;
-            } else if (_direction && _currentPrice < _price) {
-                _payout = int256(_margin) - int256(_initPositionSize * (1e18 - 1e18 * _currentPrice / _price)/1e18) + accInterest;
-            } else if (!_direction && _currentPrice <= _price) {
-                _payout = int256(_margin) + int256(_initPositionSize * (1e18 - 1e18 * _currentPrice / _price)/1e18) + accInterest;
-            } else {
-                _payout = int256(_margin) - int256(_initPositionSize * (1e18 * _currentPrice / _price - 1e18)/1e18) + accInterest;
-            }
-            _positionSize = _initPositionSize * _currentPrice / _price;
+        uint _initPositionSize = _margin * _leverage / 1e18;
+        if (_direction && _currentPrice >= _price) {
+            _payout = int256(_margin) + int256(_initPositionSize * (1e18 * _currentPrice / _price - 1e18)/1e18) + accInterest;
+        } else if (_direction && _currentPrice < _price) {
+            _payout = int256(_margin) - int256(_initPositionSize * (1e18 - 1e18 * _currentPrice / _price)/1e18) + accInterest;
+        } else if (!_direction && _currentPrice <= _price) {
+            _payout = int256(_margin) + int256(_initPositionSize * (1e18 - 1e18 * _currentPrice / _price)/1e18) + accInterest;
+        } else {
+            _payout = int256(_margin) - int256(_initPositionSize * (1e18 * _currentPrice / _price - 1e18)/1e18) + accInterest;
         }
+        _positionSize = _initPositionSize * _currentPrice / _price;
     }
 
     /**
