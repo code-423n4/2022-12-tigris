@@ -148,6 +148,10 @@ contract BondNFT is ERC721Enumerable, Ownable {
         amount = bond.amount;
         unchecked {
             totalShares[bond.asset] -= bond.shares;
+            uint _pendingDelta = (bond.shares * accRewardsPerShare[bond.asset][epoch[bond.asset]] / 1e18 - bondPaid[_id][bond.asset]) - (bond.shares * accRewardsPerShare[bond.asset][bond.expireEpoch-1] / 1e18 - bondPaid[_id][bond.asset]);
+            if (totalShares[bond.asset] > 0) {
+                accRewardsPerShare[bond.asset][epoch[bond.asset]] += _pendingDelta*1e18/totalShares[bond.asset];
+            }
             (uint256 _claimAmount,) = claim(_id, bond.owner);
             amount += _claimAmount;
         }
@@ -174,12 +178,6 @@ contract BondNFT is ERC721Enumerable, Ownable {
         amount = bond.pending;
         tigAsset = bond.asset;
         unchecked {
-            if (bond.expired) {
-                uint _pendingDelta = (bond.shares * accRewardsPerShare[bond.asset][epoch[bond.asset]] / 1e18 - bondPaid[_id][bond.asset]) - (bond.shares * accRewardsPerShare[bond.asset][bond.expireEpoch-1] / 1e18 - bondPaid[_id][bond.asset]);
-                if (totalShares[bond.asset] > 0) {
-                    accRewardsPerShare[bond.asset][epoch[bond.asset]] += _pendingDelta*1e18/totalShares[bond.asset];
-                }
-            }
             bondPaid[_id][bond.asset] += amount;
         }
         IERC20(tigAsset).transfer(manager, amount);

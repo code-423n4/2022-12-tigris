@@ -245,7 +245,12 @@ describe("Bonds", function () {
       expect(await bond.pending(1)).to.be.equals("909090909090909090684");
       expect(await bond.pending(2)).to.be.equals("0");
 
+      expect(await stabletoken.balanceOf(user.address)).to.be.equals(ethers.utils.parseEther("0"));
+      await lock.connect(user).claim(2);
+      expect(await bond.pending(2)).to.be.equals("0");
+      expect(await stabletoken.balanceOf(user.address)).to.be.equals(ethers.utils.parseEther("0"));
       await lock.connect(user).release(2);
+      expect(await stabletoken.balanceOf(user.address)).to.be.equals(ethers.utils.parseEther("1000"));
       expect(await bond.pending(1)).to.be.equals("999999999999999999725"); // Negligable difference from 1000e18 due to solidity division
     });
   });
