@@ -91,6 +91,7 @@ contract GovNFTBridged is ERC721Enumerable, ILayerZeroReceiver, MetaContext, IGo
         uint256[] memory tokenId
     ) public payable {
         require(tokenId.length > 0, "Not bridging");
+        require(tokenId.length <= maxBridge, "Over max bridge");
         for (uint i=0; i<tokenId.length; i++) {
             require(_msgSender() == ownerOf(tokenId[i]), "Not the owner");
             // burn NFT
@@ -126,6 +127,7 @@ contract GovNFTBridged is ERC721Enumerable, ILayerZeroReceiver, MetaContext, IGo
             adapterParams
         );
     }
+
     function lzReceive(
         uint16 _srcChainId,
         bytes memory _srcAddress,

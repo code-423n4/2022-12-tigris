@@ -206,6 +206,14 @@ describe("govnft", function () {
     it("Bridging without paying the bridging fee should revert", async function () {
       await expect(govnft.connect(owner).crossChain(31337, GovNFT.address, user.getAddress(), [1,3,5])).to.be.revertedWith("Must send enough value to cover messageFee");
     });
+    it("Bridging zero NFTs should revert", async function () {
+      await expect(govnft.connect(owner).crossChain(31337, GovNFT.address, user.getAddress(), [])).to.be.revertedWith("Not bridging");
+    });
+    it("Bridging over maxBridge should revert", async function () {
+      await govnft.connect(owner).setMaxBridge(2);
+      await expect(govnft.connect(owner).crossChain(31337, GovNFT.address, user.getAddress(), [1,3,5])).to.be.revertedWith("Over max bridge");
+      await govnft.connect(owner).setMaxBridge(20);
+    });
     it("Bridging someone else's NFTs should revert", async function () {
       await expect(govnft.connect(owner).crossChain(31337, GovNFT.address, user.getAddress(), [2])).to.be.revertedWith("Not the owner");
     });
