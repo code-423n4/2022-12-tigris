@@ -326,8 +326,7 @@ contract BondNFT is ERC721Enumerable, Ownable {
         uint256 _id
     ) internal override {
         Bond memory bond = idToBond(_id);
-        require(epoch[bond.asset] == block.timestamp/DAY, "Bad epoch");
-        require(!bond.expired, "Expired!");
+        require(bond.expireEpoch > block.timestamp/DAY, "Transfer after expiration");
         unchecked {
             require(block.timestamp > bond.mintTime + 300, "Recent update");
             userDebt[from][bond.asset] += bond.pending;

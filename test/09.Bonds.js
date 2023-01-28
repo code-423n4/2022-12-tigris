@@ -489,15 +489,6 @@ describe("Bonds", function () {
   });
   });
   describe("Bond transfers", function () {
-    it("Bond can only transferred if epoch is updated", async function () {
-      await stabletoken.connect(owner).mintFor(owner.address, ethers.utils.parseEther("3000"));
-      await lock.connect(owner).lock(StableToken.address, ethers.utils.parseEther("3000"), 365);
-
-      await network.provider.send("evm_increaseTime", [864000]);
-      await network.provider.send("evm_mine");
-
-      await expect(bond.connect(owner).safeTransferMany(user.address, [1])).to.be.revertedWith("Bad epoch");
-    });
     it("Expired bond cannot be transferred", async function () {
       await stabletoken.connect(owner).mintFor(owner.address, ethers.utils.parseEther("3000"));
       await lock.connect(owner).lock(StableToken.address, ethers.utils.parseEther("3000"), 10);
@@ -506,7 +497,7 @@ describe("Bonds", function () {
       await network.provider.send("evm_mine");
 
       await lock.connect(owner).claimGovFees();
-      await expect(bond.connect(owner).safeTransferMany(user.address, [1])).to.be.revertedWith("Expired!");
+      await expect(bond.connect(owner).safeTransferMany(user.address, [1])).to.be.revertedWith("Transfer after expiration");
     });
     it("Bond can only be transferred 5 minutes after an update", async function () {
       await stabletoken.connect(owner).mintFor(owner.address, ethers.utils.parseEther("3000"));
