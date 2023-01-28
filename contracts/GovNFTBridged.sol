@@ -19,6 +19,7 @@ contract GovNFTBridged is ERC721Enumerable, ILayerZeroReceiver, MetaContext, IGo
 
     mapping(uint16 => mapping(address => bool)) public isTrustedAddress;
     mapping(uint16 => mapping(bytes => mapping(uint64 => bytes32))) public failedMessages;
+    mapping(uint16 => mapping(bytes => mapping(uint64 => bool))) public consumedMessage;
     event MessageFailed(uint16 _srcChainId, bytes _srcAddress, uint64 _nonce, bytes _payload, bytes _reason);
     event RetryMessageSuccess(uint16 _srcChainId, bytes _srcAddress, uint64 _nonce, bytes32 _payloadHash);
     event ReceiveNFT(
@@ -132,6 +133,8 @@ contract GovNFTBridged is ERC721Enumerable, ILayerZeroReceiver, MetaContext, IGo
         bytes memory _payload
     ) external override {
         require(_msgSender() == address(endpoint), "!Endpoint");
+        if (consumedMessage[_srcChainId][_srcAddress][_nonce]) return;
+        consumedMessage[_srcChainId][_srcAddress][_nonce] = true;
         (bool success, bytes memory reason) = address(this).excessivelySafeCall(gasleft()*4/5, 150, abi.encodeWithSelector(this.nonblockingLzReceive.selector, _srcChainId, _srcAddress, _nonce, _payload));
         // try-catch all errors/exceptions
         if (!success) {
