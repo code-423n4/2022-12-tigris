@@ -300,7 +300,7 @@ contract Trading is MetaContext, ITrading {
             _updateFunding(_trade.asset, _trade.tigAsset);
             _addMargin -= _fee;
             uint _newMargin = _trade.margin + _addMargin;
-            uint _newPrice = _trade.price*_trade.margin/_newMargin + _price*_addMargin/_newMargin;
+            uint _newPrice = _trade.price * _price * _newMargin /  (_trade.margin * _price + _addMargin * _trade.price);
 
             position.addToPosition(
                 _trade.id,
