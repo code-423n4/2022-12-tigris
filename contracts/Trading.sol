@@ -142,6 +142,8 @@ contract Trading is MetaContext, ITrading {
 
     mapping(address => Proxy) public proxyApprovals;
 
+    mapping(address => bool) public marginApproved;
+
     constructor(
         address _position,
         address _gov,
@@ -670,7 +672,10 @@ contract Trading is MetaContext, ITrading {
             uint256 _balBefore = tigAsset.balanceOf(address(this));
             uint _marginDecMultiplier = 10**(18-ExtendedIERC20(_marginAsset).decimals());
             IERC20(_marginAsset).transferFrom(_trader, address(this), _margin/_marginDecMultiplier);
-            IERC20(_marginAsset).approve(_stableVault, type(uint).max);
+            if (!marginApproved[_marginAsset]) {
+                IERC20(_marginAsset).approve(_stableVault, type(uint).max);
+                marginApproved[_marginAsset] = true;
+            }
             IStableVault(_stableVault).deposit(_marginAsset, _margin/_marginDecMultiplier);
             if (tigAsset.balanceOf(address(this)) != _balBefore + _margin) revert BadDeposit();
             tigAsset.burnFrom(address(this), tigAsset.balanceOf(address(this)));
