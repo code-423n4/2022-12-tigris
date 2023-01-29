@@ -145,7 +145,6 @@ contract Position is ERC721Enumerable, MetaContext, IPosition {
         newTrade.id = newTokenID;
         newTrade.tigAsset = _mintTrade.tigAsset;
 
-        _safeMint(_mintTrade.account, newTokenID);
         if (_mintTrade.orderType > 0) {
             _limitOrders[_mintTrade.asset].push(newTokenID);
             _limitOrderIndexes[_mintTrade.asset][newTokenID] = _limitOrders[_mintTrade.asset].length-1;
@@ -158,6 +157,7 @@ contract Position is ERC721Enumerable, MetaContext, IPosition {
             _assetOpenPositionsIndexes[_mintTrade.asset][newTokenID] = _assetOpenPositions[_mintTrade.asset].length-1;
         }
         _tokenIds.increment();
+        _mint(_mintTrade.account, newTokenID);
     }
 
     /**
