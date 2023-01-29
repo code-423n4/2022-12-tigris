@@ -215,18 +215,22 @@ contract BondNFT is ERC721Enumerable, Ownable {
         address _tigAsset,
         uint _amount
     ) external {
-        if (totalShares[_tigAsset] == 0 || !allowedAsset[_tigAsset]) return;
-        IERC20(_tigAsset).transferFrom(_msgSender(), address(this), _amount);
+        if (!allowedAsset[_tigAsset]) return;
+        uint aEpoch;
         unchecked {
-            uint aEpoch = block.timestamp / DAY;
+            aEpoch = block.timestamp / DAY;
             if (aEpoch > epoch[_tigAsset]) {
                 for (uint i=epoch[_tigAsset]; i<aEpoch; i++) {
                     epoch[_tigAsset] += 1;
                     accRewardsPerShare[_tigAsset][i+1] = accRewardsPerShare[_tigAsset][i];
                 }
             }
+        }
+        if (totalShares[_tigAsset] == 0) return;
+        unchecked {
             accRewardsPerShare[_tigAsset][aEpoch] += _amount * 1e18 / totalShares[_tigAsset];
         }
+        IERC20(_tigAsset).transferFrom(_msgSender(), address(this), _amount);
         emit Distribution(_tigAsset, _amount);
     }
 
