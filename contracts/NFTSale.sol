@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 interface IERC721 {
     function balanceOf(address) external view returns (uint256);
-    function safeTransferMany(address, uint[] memory) external;
+    function transferMany(address, uint[] memory) external;
     function claim(address) external;
 }
 
@@ -48,7 +48,7 @@ contract NFTSale is Ownable {
         for (uint i=0; i<_amount; i++) {
             availableIds.pop();
         }
-        nft.safeTransferMany(msg.sender, _sold);
+        nft.transferMany(msg.sender, _sold);
     }
 
     function recovertoken() external {
@@ -56,7 +56,7 @@ contract NFTSale is Ownable {
     }
 
     function recoverNft() external onlyOwner {
-        nft.safeTransferMany(owner(), availableIds);
+        nft.transferMany(owner(), availableIds);
         availableIds = new uint[](0);
     }
 

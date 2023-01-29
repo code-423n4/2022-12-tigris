@@ -211,15 +211,15 @@ contract GovNFTBridged is ERC721Enumerable, ILayerZeroReceiver, MetaContext, IGo
         _transfer(from, to, tokenId);
     }
 
-    function safeTransferMany(address _to, uint[] calldata _ids) external {
+    function transferMany(address _to, uint[] calldata _ids) external {
         for (uint i=0; i<_ids.length; i++) {
             _transfer(_msgSender(), _to, _ids[i]);
         }
     }
 
-    function safeTransferFromMany(address _from, address _to, uint[] calldata _ids) external {
+    function transferFromMany(address _from, address _to, uint[] calldata _ids) external {
         for (uint i=0; i<_ids.length; i++) {
-            safeTransferFrom(_from, _to, _ids[i]);
+            transferFrom(_from, _to, _ids[i]);
         }
     }
 

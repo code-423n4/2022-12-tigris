@@ -99,7 +99,7 @@ describe("govnft", function () {
       expect(await govnft.pending(user.getAddress(), StableToken.address)).to.equal(500);
     });
     it("Transferring an NFT with pending delisted rewards should not affect pending rewards", async function () {
-      await govnft.connect(owner).safeTransferMany(user.getAddress(), [2,3]);
+      await govnft.connect(owner).transferMany(user.getAddress(), [2,3]);
       expect(await govnft.balanceOf(owner.getAddress())).to.equal(0);
       expect(await govnft.balanceOf(user.getAddress())).to.equal(3);
       expect(await govnft.pending(owner.getAddress(), StableToken.address)).to.equal(1500);
@@ -107,7 +107,7 @@ describe("govnft", function () {
     });
     it("Transferring an NFT via approval should not affect pending rewards", async function () {
       await govnft.connect(user).approveMany(owner.getAddress(), [1,2,3]);
-      await govnft.connect(owner).safeTransferFromMany(user.getAddress(), owner.getAddress(), [1,2,3]);
+      await govnft.connect(owner).transferFromMany(user.getAddress(), owner.getAddress(), [1,2,3]);
       expect(await govnft.balanceOf(owner.getAddress())).to.equal(3);
       expect(await govnft.balanceOf(user.getAddress())).to.equal(0);
       expect(await govnft.pending(owner.getAddress(), StableToken.address)).to.equal(1500);
@@ -116,8 +116,8 @@ describe("govnft", function () {
     it("Transferring and approving unowned NFTs in any way should revert", async function () {
       await expect(govnft.connect(user).approveMany(owner.getAddress(), [1,2,3])).to.be.revertedWith("ERC721: approval to current owner");
       await expect(govnft.connect(user).approveMany(node.getAddress(), [1,2,3])).to.be.revertedWith("ERC721: approve caller is not token owner or approved for all");
-      await expect(govnft.connect(owner).safeTransferFromMany(user.getAddress(), owner.getAddress(), [1,2,3])).to.be.revertedWith("!Owner");
-      await expect(govnft.connect(user).safeTransferMany(owner.getAddress(), [1,2,3])).to.be.revertedWith("!Owner");
+      await expect(govnft.connect(owner).transferFromMany(user.getAddress(), owner.getAddress(), [1,2,3])).to.be.revertedWith("!Owner");
+      await expect(govnft.connect(user).transferMany(owner.getAddress(), [1,2,3])).to.be.revertedWith("!Owner");
       expect(await govnft.balanceOf(owner.getAddress())).to.equal(3);
       expect(await govnft.balanceOf(user.getAddress())).to.equal(0);
       expect(await govnft.pending(owner.getAddress(), StableToken.address)).to.equal(1500);
@@ -139,7 +139,7 @@ describe("govnft", function () {
       expect(await govnft.pending(owner.getAddress(), StableToken.address)).to.equal(1500);
     });
     it("Transferring NFTs after claiming should not affect pending rewards", async function () {
-      await govnft.connect(owner).safeTransferFromMany(owner.getAddress(), user.getAddress(), [1,2]);
+      await govnft.connect(owner).transferFromMany(owner.getAddress(), user.getAddress(), [1,2]);
       await govnft.connect(user).transferFrom(user.getAddress(), owner.getAddress(), 3);
       expect(await govnft.balanceOf(owner.getAddress())).to.equal(1);
       expect(await govnft.balanceOf(user.getAddress())).to.equal(2);

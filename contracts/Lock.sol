@@ -139,7 +139,7 @@ contract Lock is Ownable{
     function sendNFTs(
         uint[] memory _ids
     ) external onlyOwner() {
-        govNFT.safeTransferMany(msg.sender, _ids);
+        govNFT.transferMany(msg.sender, _ids);
     }
 
     /**

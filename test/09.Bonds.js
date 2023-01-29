@@ -48,7 +48,7 @@ describe("Bonds", function () {
     await stabletoken.connect(owner).approve(Lock.address, ethers.utils.parseEther("100000000000"));
     await stabletoken.connect(owner).approve(Bond.address, ethers.utils.parseEther("100000000000"));
     await stabletoken.connect(owner).approve(GovNFT.address, ethers.utils.parseEther("100000000000"));
-    await govnft.connect(owner).safeTransferMany(Lock.address, [1]);
+    await govnft.connect(owner).transferMany(Lock.address, [1]);
     await lock.editAsset(StableToken.address, true);
     await bond.addAsset(StableToken.address);
   });
@@ -214,8 +214,8 @@ describe("Bonds", function () {
       await network.provider.send("evm_increaseTime", [300]);
       await network.provider.send("evm_mine");
 
-      await bond.connect(owner).safeTransferMany(user.address, [1]);
-      await bond.connect(user).safeTransferMany(owner.address, [2]);
+      await bond.connect(owner).transferMany(user.address, [1]);
+      await bond.connect(user).transferMany(owner.address, [2]);
       expect(await bond.pending(1)).to.be.equals("0");
       expect(await bond.pending(2)).to.be.equals("0");
       expect(await bond.userDebt(owner.address, stabletoken.address)).to.be.equals("916317991631799162000");// 916.3 tigUSD
@@ -502,12 +502,12 @@ describe("Bonds", function () {
       await network.provider.send("evm_mine");
 
       await lock.connect(owner).claimGovFees();
-      await expect(bond.connect(owner).safeTransferMany(user.address, [1])).to.be.revertedWith("Transfer after expiration");
+      await expect(bond.connect(owner).transferMany(user.address, [1])).to.be.revertedWith("Transfer after expiration");
     });
     it("Bond can only be transferred 5 minutes after an update", async function () {
       await stabletoken.connect(owner).mintFor(owner.address, ethers.utils.parseEther("3000"));
       await lock.connect(owner).lock(StableToken.address, ethers.utils.parseEther("3000"), 10);
-      await expect(bond.connect(owner).safeTransferMany(user.address, [1])).to.be.revertedWith("Recent update");
+      await expect(bond.connect(owner).transferMany(user.address, [1])).to.be.revertedWith("Recent update");
     });
     it("TransferFromMany should work as expected", async function () {
       await stabletoken.connect(owner).mintFor(owner.address, ethers.utils.parseEther("9000"));
@@ -524,7 +524,7 @@ describe("Bonds", function () {
       expect(await bond.balanceOf(owner.address)).to.be.equals(3);
       expect(await bond.balanceOf(user.address)).to.be.equals(0);
       await bond.connect(owner).approveMany(user.address, [1,2,3]);
-      await bond.connect(user).safeTransferFromMany(owner.address, user.address, [1,2,3]);
+      await bond.connect(user).transferFromMany(owner.address, user.address, [1,2,3]);
       expect(await bond.balanceOf(owner.address)).to.be.equals(0);
       expect(await bond.balanceOf(user.address)).to.be.equals(3);
     });

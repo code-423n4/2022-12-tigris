@@ -277,7 +277,11 @@ contract BondNFT is ERC721Enumerable, Ownable {
         return baseURI;
     }
 
-    function safeTransferMany(address _to, uint[] calldata _ids) external {
+    function _safeTransfer(address from, address to, uint256 tokenId, bytes memory data) internal override {
+        _transfer(from, to, tokenId);
+    }
+
+    function transferMany(address _to, uint[] calldata _ids) external {
         unchecked {
             for (uint i=0; i<_ids.length; i++) {
                 _transfer(_msgSender(), _to, _ids[i]);
@@ -285,10 +289,10 @@ contract BondNFT is ERC721Enumerable, Ownable {
         }
     }
 
-    function safeTransferFromMany(address _from, address _to, uint[] calldata _ids) external {
+    function transferFromMany(address _from, address _to, uint[] calldata _ids) external {
         unchecked {
             for (uint i=0; i<_ids.length; i++) {
-                safeTransferFrom(_from, _to, _ids[i]);
+                transferFrom(_from, _to, _ids[i]);
             }
         }
     }
