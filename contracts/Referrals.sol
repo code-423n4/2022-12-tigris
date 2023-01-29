@@ -18,6 +18,7 @@ contract Referrals is Ownable, IReferrals {
     * @param _hash hash of the string code
     */
     function createReferralCode(bytes32 _hash) external {
+        require(_hash != bytes32(0), "Zero hash");
         require(_referral[_hash] == address(0), "Referral code already exists");
         _referral[_hash] = _msgSender();
         emit ReferralCreated(_msgSender(), _hash);
