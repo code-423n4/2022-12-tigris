@@ -96,7 +96,7 @@ describe("Trading", function () {
       await expect(trading.connect(user).setTradingExtension(user.address)).to.be.revertedWith("Ownable");
     });
     it("Set block delay", async function () {
-      await expect(trading.connect(user).setBlockDelay(1)).to.be.revertedWith("Ownable");
+      await expect(trading.connect(user).setTimeDelay(1)).to.be.revertedWith("Ownable");
     });
     it("Set allowed vault", async function () {
       await expect(trading.connect(user).setAllowedVault(StableVault.address, true)).to.be.revertedWith("Ownable");
@@ -1108,7 +1108,7 @@ describe("Trading", function () {
      */
     it("Executing TP before block delay has passed should revert", async function () {
       // Open position
-      trading.connect(owner).setBlockDelay(10); // 10 block delay
+      trading.connect(owner).setTimeDelay(10); // 10 second delay
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("22000"), parseEther("0"), ethers.constants.HashZero];
       let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
       let openMessage = ethers.utils.keccak256(
@@ -2391,7 +2391,7 @@ describe("Trading", function () {
   });
   describe("Order minimum delay check", function () {
     it("CheckDelay on opening + interaction should work as expected", async function () {
-      trading.connect(owner).setBlockDelay(1000); // 1000 block delay
+      trading.connect(owner).setTimeDelay(1000); // 1000 second delay
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
       let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
       let openMessage = ethers.utils.keccak256(

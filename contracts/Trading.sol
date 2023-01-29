@@ -126,11 +126,11 @@ contract Trading is MetaContext, ITrading {
     ITradingExtension private tradingExtension;
 
     struct Delay {
-        uint delay; // Block number where delay ends
+        uint delay; // Block timestamp where delay ends
         bool actionType; // True for open, False for close
     }
-    mapping(uint => Delay) public blockDelayPassed; // id => Delay
-    uint public blockDelay;
+    mapping(uint => Delay) public timeDelayPassed; // id => Delay
+    uint public timeDelay;
     mapping(uint => uint) public limitDelay; // id => block.timestamp
 
     mapping(address => bool) public allowedVault;
@@ -882,13 +882,13 @@ contract Trading is MetaContext, ITrading {
      */
     function _checkDelay(uint _id, bool _type) internal {
         unchecked {
-            Delay memory _delay = blockDelayPassed[_id];
+            Delay memory _delay = timeDelayPassed[_id];
             if (_delay.actionType == _type) {
-                blockDelayPassed[_id].delay = block.number + blockDelay;
+                timeDelayPassed[_id].delay = block.timestamp + timeDelay;
             } else {
-                if (block.number < _delay.delay) revert("0"); //Wait
-                blockDelayPassed[_id].delay = block.number + blockDelay;
-                blockDelayPassed[_id].actionType = _type;
+                if (block.timestamp < _delay.delay) revert("0"); //Wait
+                timeDelayPassed[_id].delay = block.timestamp + timeDelay;
+                timeDelayPassed[_id].actionType = _type;
             }
         }
     }
@@ -917,17 +917,16 @@ contract Trading is MetaContext, ITrading {
     // ===== GOVERNANCE-ONLY =====
 
     /**
-     * @dev Sets block delay between opening and closing
-     * @notice In blocks not seconds
-     * @param _blockDelay delay amount
+     * @dev Sets timestamp delay between opening and closing
+     * @param _timeDelay delay amount
      */
-    function setBlockDelay(
-        uint _blockDelay
+    function setTimeDelay(
+        uint _timeDelay
     )
         external
         onlyOwner
     {
-        blockDelay = _blockDelay;
+        timeDelay = _timeDelay;
     }
 
     /**
