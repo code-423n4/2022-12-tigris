@@ -207,6 +207,10 @@ contract GovNFTBridged is ERC721Enumerable, ILayerZeroReceiver, MetaContext, IGo
         endpoint = _endpoint;
     }
 
+    function _safeTransfer(address from, address to, uint256 tokenId, bytes memory data) internal override {
+        _transfer(from, to, tokenId);
+    }
+
     function safeTransferMany(address _to, uint[] calldata _ids) external {
         for (uint i=0; i<_ids.length; i++) {
             _transfer(_msgSender(), _to, _ids[i]);
