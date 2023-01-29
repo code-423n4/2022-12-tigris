@@ -511,7 +511,7 @@ contract Trading is MetaContext, ITrading {
             tradingExtension._checkGas();
             if (tradingExtension.paused()) revert TradingPaused();
             IPosition.Trade memory trade = position.trades(_id);
-            uint _fee = _handleOpenFees(trade.asset, trade.margin*trade.leverage/1e18, trade.trader, trade.tigAsset, block.timestamp > lastLimitUpdate[_id]);
+            trade.margin -= _handleOpenFees(trade.asset, trade.margin*trade.leverage/1e18, trade.trader, trade.tigAsset, block.timestamp > lastLimitUpdate[_id]);
             (uint256 _price, uint256 _spread) = tradingExtension.getVerifiedPrice(trade.asset, _priceData, _signature, 0);
             if (trade.orderType == 0) revert("5");
             if (_price > trade.price+trade.price*limitOrderPriceRange/DIVISION_CONSTANT || _price < trade.price-trade.price*limitOrderPriceRange/DIVISION_CONSTANT) revert("6"); //LimitNotMet
@@ -537,8 +537,8 @@ contract Trading is MetaContext, ITrading {
                 tradingExtension.modifyShortOi(trade.asset, trade.tigAsset, true, trade.margin*trade.leverage/1e18);
             }
             _updateFunding(trade.asset, trade.tigAsset);
-            position.executeLimitOrder(_id, trade.price, trade.margin - _fee);
-            emit LimitOrderExecuted(trade.asset, trade.direction, trade.price, trade.leverage, trade.margin - _fee, _id, trade.trader, _msgSender());
+            position.executeLimitOrder(_id, trade.price, trade.margin);
+            emit LimitOrderExecuted(trade.asset, trade.direction, trade.price, trade.leverage, trade.margin, _id, trade.trader, _msgSender());
         }
     }
 

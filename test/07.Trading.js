@@ -794,7 +794,7 @@ describe("Trading", function () {
       let sig = await node.signMessage(
         Buffer.from(message.substring(2), 'hex')
       );
-      
+
       await trading.connect(user).executeLimitOrder(1, PriceData, sig);
       expect(await position.limitOrdersLength(0)).to.equal(0); // Limit order executed
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Creates open position
@@ -804,6 +804,8 @@ describe("Trading", function () {
       expect(price).to.equal(parseEther("20020")); // Should have guaranteed execution price with spread
     });
     it("Creating and executing limit buy order, should have correct price and bot fees", async function () {
+      await trading.connect(owner).setFees(true,5e6,5e6,1e6,2e6,0);
+      await trading.connect(owner).setFees(false,5e6,5e6,1e6,2e6,0);
       // Create limit order
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
@@ -826,7 +828,11 @@ describe("Trading", function () {
         Buffer.from(message.substring(2), 'hex')
       );
       
+      let oi = await pairscontract.idToOi(0, stabletoken.address);
+      expect(oi.longOi).to.equal(0);
       await trading.connect(user).executeLimitOrder(1, PriceData, sig);
+      oi = await pairscontract.idToOi(0, stabletoken.address);
+      expect(oi.longOi).to.equal(parseEther("9900"));
       expect(await position.limitOrdersLength(0)).to.equal(0); // Limit order executed
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Creates open position
       expect((await trading.openFees()).botFees).to.equal(2000000);
@@ -835,6 +841,8 @@ describe("Trading", function () {
       expect(price).to.equal(parseEther("20020")); // Should have guaranteed execution price with spread
     });
     it("Creating and executing limit sell order, should have correct price and bot fees", async function () {
+      await trading.connect(owner).setFees(true,5e6,5e6,1e6,2e6,0);
+      await trading.connect(owner).setFees(false,5e6,5e6,1e6,2e6,0);
       // Create limit order
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, false, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
@@ -857,7 +865,11 @@ describe("Trading", function () {
         Buffer.from(message.substring(2), 'hex')
       );
             
+      let oi = await pairscontract.idToOi(0, stabletoken.address);
+      expect(oi.shortOi).to.equal(0);
       await trading.connect(user).executeLimitOrder(1, PriceData, sig);
+      oi = await pairscontract.idToOi(0, stabletoken.address);
+      expect(oi.shortOi).to.equal(parseEther("9900"));
       expect(await position.limitOrdersLength(0)).to.equal(0); // Limit order executed
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Creates open position
       expect(await stabletoken.balanceOf(user.address)).to.equal(parseEther("2"));
@@ -887,7 +899,11 @@ describe("Trading", function () {
         Buffer.from(message.substring(2), 'hex')
       );
             
+      let oi = await pairscontract.idToOi(0, stabletoken.address);
+      expect(oi.longOi).to.equal(0);
       await trading.connect(user).executeLimitOrder(1, PriceData, sig);
+      oi = await pairscontract.idToOi(0, stabletoken.address);
+      expect(oi.longOi).to.equal(parseEther("9900"));
       expect(await position.limitOrdersLength(0)).to.equal(0); // Limit order executed
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Creates open position
       expect(await stabletoken.balanceOf(user.address)).to.equal(parseEther("2"));
@@ -917,7 +933,11 @@ describe("Trading", function () {
         Buffer.from(message.substring(2), 'hex')
       );
             
+      let oi = await pairscontract.idToOi(0, stabletoken.address);
+      expect(oi.shortOi).to.equal(0);
       await trading.connect(user).executeLimitOrder(1, PriceData, sig);
+      oi = await pairscontract.idToOi(0, stabletoken.address);
+      expect(oi.shortOi).to.equal(parseEther("9900"));
       expect(await position.limitOrdersLength(0)).to.equal(0); // Limit order executed
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Creates open position
       expect(await stabletoken.balanceOf(user.address)).to.equal(parseEther("2"));
