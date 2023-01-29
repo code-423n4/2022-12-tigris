@@ -776,6 +776,33 @@ describe("Trading", function () {
     /**
      * Non-reverting limit order tests
      */
+    it("Executing limit order before a second has passed should have no bot fees", async function () {
+      // Create limit order
+      let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
+      let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
+      await trading.connect(owner).initiateLimitOrder(TradeInfo, 1, parseEther("20000"), PermitData, owner.address);
+      expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
+
+      // Execute limit order
+      let PriceData = [node.address, 0, parseEther("10000"), 10000000, 2000000000, false]; // 0.1% spread
+      let message = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("10000"), 10000000, 2000000000, false]
+        )
+      );
+      let sig = await node.signMessage(
+        Buffer.from(message.substring(2), 'hex')
+      );
+      
+      await trading.connect(user).executeLimitOrder(1, PriceData, sig);
+      expect(await position.limitOrdersLength(0)).to.equal(0); // Limit order executed
+      expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Creates open position
+      expect((await trading.openFees()).botFees).to.equal(2000000);
+      expect(await stabletoken.balanceOf(user.address)).to.equal(0); // No bot fees earned
+      let [,,,,price,,,,,,,] = await position.trades(1);
+      expect(price).to.equal(parseEther("20020")); // Should have guaranteed execution price with spread
+    });
     it("Creating and executing limit buy order, should have correct price and bot fees", async function () {
       // Create limit order
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
@@ -783,8 +810,8 @@ describe("Trading", function () {
       await trading.connect(owner).initiateLimitOrder(TradeInfo, 1, parseEther("20000"), PermitData, owner.address);
       expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
 
-      // Limit order delay
-      await network.provider.send("evm_increaseTime", [10]);
+      // lastLimitUpdate
+      await network.provider.send("evm_increaseTime", [1]);
       await network.provider.send("evm_mine");
 
       // Execute limit order
@@ -814,8 +841,8 @@ describe("Trading", function () {
       await trading.connect(owner).initiateLimitOrder(TradeInfo, 1, parseEther("10000"), PermitData, owner.address);
       expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
 
-      // Limit order delay
-      await network.provider.send("evm_increaseTime", [10]);
+      // lastLimitUpdate
+      await network.provider.send("evm_increaseTime", [1]);
       await network.provider.send("evm_mine");
 
       // Execute limit order
@@ -844,8 +871,8 @@ describe("Trading", function () {
       await trading.connect(owner).initiateLimitOrder(TradeInfo, 2, parseEther("20000"), PermitData, owner.address);
       expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
 
-      // Limit order delay
-      await network.provider.send("evm_increaseTime", [10]);
+      // lastLimitUpdate
+      await network.provider.send("evm_increaseTime", [1]);
       await network.provider.send("evm_mine");
 
       // Execute limit order
@@ -874,8 +901,8 @@ describe("Trading", function () {
       await trading.connect(owner).initiateLimitOrder(TradeInfo, 2, parseEther("20000"), PermitData, owner.address);
       expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
 
-      // Limit order delay
-      await network.provider.send("evm_increaseTime", [10]);
+      // lastLimitUpdate
+      await network.provider.send("evm_increaseTime", [1]);
       await network.provider.send("evm_mine");
 
       // Execute limit order
@@ -900,27 +927,6 @@ describe("Trading", function () {
     /**
      * Reverting limit order tests
      */
-    it("Executing a limit order should revert if limit delay hasn't passed", async function () {
-      // Create limit order
-      let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
-      await trading.connect(owner).initiateLimitOrder(TradeInfo, 1, parseEther("20000"), PermitData, owner.address);
-      expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
-
-      // Execute limit order
-      let PriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
-      let message = ethers.utils.keccak256(
-        ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
-        )
-      );
-      let sig = await node.signMessage(
-        Buffer.from(message.substring(2), 'hex')
-      );
-      
-      await expect(trading.connect(user).executeLimitOrder(1, PriceData, sig)).to.be.revertedWith("");
-    });
     it("Creating a limit with zero price should revert", async function () {
       // Create limit order
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
@@ -958,8 +964,8 @@ describe("Trading", function () {
       await trading.connect(owner).initiateLimitOrder(TradeInfo, 1, parseEther("20000"), PermitData, owner.address);
       expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
 
-      // Limit order delay
-      await network.provider.send("evm_increaseTime", [10]);
+      // lastLimitUpdate
+      await network.provider.send("evm_increaseTime", [1]);
       await network.provider.send("evm_mine");
       
       // Execute limit order
@@ -983,8 +989,8 @@ describe("Trading", function () {
       await trading.connect(owner).initiateLimitOrder(TradeInfo, 1, parseEther("20000"), PermitData, owner.address);
       expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
 
-      // Limit order delay
-      await network.provider.send("evm_increaseTime", [10]);
+      // lastLimitUpdate
+      await network.provider.send("evm_increaseTime", [1]);
       await network.provider.send("evm_mine");
       
       // Execute limit order
@@ -1008,8 +1014,8 @@ describe("Trading", function () {
       await trading.connect(owner).initiateLimitOrder(TradeInfo, 2, parseEther("20000"), PermitData, owner.address);
       expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
 
-      // Limit order delay
-      await network.provider.send("evm_increaseTime", [10]);
+      // lastLimitUpdate
+      await network.provider.send("evm_increaseTime", [1]);
       await network.provider.send("evm_mine");
       
       // Execute limit order
@@ -1033,8 +1039,8 @@ describe("Trading", function () {
       await trading.connect(owner).initiateLimitOrder(TradeInfo, 2, parseEther("20000"), PermitData, owner.address);
       expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
 
-      // Limit order delay
-      await network.provider.send("evm_increaseTime", [10]);
+      // lastLimitUpdate
+      await network.provider.send("evm_increaseTime", [1]);
       await network.provider.send("evm_mine");
       
       // Execute limit order
@@ -1059,8 +1065,8 @@ describe("Trading", function () {
       await trading.connect(owner).initiateLimitOrder(TradeInfo, 2, parseEther("20000"), PermitData, owner.address);
       expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
 
-      // Limit order delay
-      await network.provider.send("evm_increaseTime", [10]);
+      // lastLimitUpdate
+      await network.provider.send("evm_increaseTime", [1]);
       await network.provider.send("evm_mine");
       
       // Execute limit order
@@ -1085,8 +1091,8 @@ describe("Trading", function () {
       await trading.connect(owner).initiateLimitOrder(TradeInfo, 2, parseEther("20000"), PermitData, owner.address);
       expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
 
-      // Limit order delay
-      await network.provider.send("evm_increaseTime", [10]);
+      // lastLimitUpdate
+      await network.provider.send("evm_increaseTime", [1]);
       await network.provider.send("evm_mine");
       
       // Execute limit order
@@ -1301,6 +1307,45 @@ describe("Trading", function () {
     /**
      * Non-reverting SL/TP tests
      */
+    it("Executing a TP/SL should have no bot fees if a second hasn't passed since last update", async function () {
+      await pairscontract.connect(owner).setAssetBaseFundingRate(0, 0); // Funding rate messes with results because of time
+      await trading.connect(owner).setFees(true,0,0,0,0,0); // Set fees to zero for easier calculation
+      await trading.connect(owner).setFees(false,0,0,0,0,0); // Set fees to zero for easier calculation
+      // Open position
+      let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("22000"), parseEther("0"), ethers.constants.HashZero];
+      let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let openMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+        )
+      );
+      let openSig = await node.signMessage(
+        Buffer.from(openMessage.substring(2), 'hex')
+      );
+      
+      let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
+      await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
+      expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Trade has opened
+      // TP execution
+      await trading.connect(owner).setFees(true,1e7,0,0,1e7,0); // Easier to calculate with only bot fees
+      await trading.connect(owner).setFees(false,1e7,0,0,1e7,0); // Easier to calculate with only bot fees
+      let closePriceData = [node.address, 0, parseEther("22000"), 0, 2000000000, false];
+      let closeMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("22000"), 0, 2000000000, false]
+        )
+      );
+      let closeSig = await node.signMessage(
+        Buffer.from(closeMessage.substring(2), 'hex')
+      );
+      // Update TPSL
+      await trading.connect(owner).updateTpSl(true, 1, parseEther("22000"), closePriceData, closeSig, owner.address);
+      await trading.connect(user).limitClose(1, true, closePriceData, closeSig);
+      expect(await stabletoken.balanceOf(owner.address)).to.equal(parseEther("1989"));
+      expect(await stabletoken.balanceOf(user.address)).to.equal(0); // No bot fees earned
+    });
     it("Executing a long TP should have correct fees and payout", async function () {
       await pairscontract.connect(owner).setAssetBaseFundingRate(0, 0); // Funding rate messes with results because of time
       await trading.connect(owner).setFees(true,0,0,0,0,0); // Set fees to zero for easier calculation

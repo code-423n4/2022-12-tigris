@@ -130,8 +130,8 @@ contract Trading is MetaContext, ITrading {
         bool actionType; // True for open, False for close
     }
     mapping(uint => Delay) public timeDelayPassed; // id => Delay
+    mapping(uint => uint) public lastLimitUpdate; // id => timestamp
     uint public timeDelay;
-    mapping(uint => uint) public limitDelay; // id => block.timestamp
 
     mapping(address => bool) public allowedVault;
 
@@ -352,7 +352,7 @@ contract Trading is MetaContext, ITrading {
                 _tigAsset
             )
         );
-        limitDelay[_id] = block.timestamp + 4;
+        lastLimitUpdate[_id] = block.timestamp+1;
         emit PositionOpened(_tradeInfo, _orderType, _price, _id, _trader, _tradeInfo.margin);
     }
 
@@ -490,6 +490,7 @@ contract Trading is MetaContext, ITrading {
             _checkSl(_limitPrice, _trade.direction, _price);
             position.modifySl(_id, _limitPrice);
         }
+        lastLimitUpdate[_id] = block.timestamp+1;
         emit UpdateTPSL(_id, _type, _limitPrice, _trader);
     }
 
@@ -509,9 +510,8 @@ contract Trading is MetaContext, ITrading {
             _checkDelay(_id, true);
             tradingExtension._checkGas();
             if (tradingExtension.paused()) revert TradingPaused();
-            require(block.timestamp >= limitDelay[_id]);
             IPosition.Trade memory trade = position.trades(_id);
-            uint _fee = _handleOpenFees(trade.asset, trade.margin*trade.leverage/1e18, trade.trader, trade.tigAsset, true);
+            uint _fee = _handleOpenFees(trade.asset, trade.margin*trade.leverage/1e18, trade.trader, trade.tigAsset, block.timestamp > lastLimitUpdate[_id]);
             (uint256 _price, uint256 _spread) = tradingExtension.getVerifiedPrice(trade.asset, _priceData, _signature, 0);
             if (trade.orderType == 0) revert("5");
             if (_price > trade.price+trade.price*limitOrderPriceRange/DIVISION_CONSTANT || _price < trade.price-trade.price*limitOrderPriceRange/DIVISION_CONSTANT) revert("6"); //LimitNotMet
@@ -595,7 +595,7 @@ contract Trading is MetaContext, ITrading {
             _checkDelay(_id, false);
         }
         (uint _limitPrice, address _tigAsset) = tradingExtension._limitClose(_id, _tp, _priceData, _signature);
-        _closePosition(_id, DIVISION_CONSTANT, _limitPrice, address(0), _tigAsset, true);
+        _closePosition(_id, DIVISION_CONSTANT, _limitPrice, address(0), _tigAsset, block.timestamp > lastLimitUpdate[_id]);
     }
 
     /**
