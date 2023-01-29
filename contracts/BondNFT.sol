@@ -107,19 +107,24 @@ contract BondNFT is ERC721Enumerable, Ownable {
         require(!bond.expired, "Expired");
         require(bond.asset == _asset, "!BondAsset");
         require(bond.pending == 0);
+        uint currentEpoch = block.timestamp/DAY;
         require(epoch[bond.asset] == block.timestamp/DAY, "Bad epoch");
+        uint pendingEpochs = bond.expireEpoch - currentEpoch;
+        uint newBondPeriod = pendingEpochs + _period;
+        require(newBondPeriod >= 7, "MIN PERIOD");
         require(bond.period+_period <= 365, "MAX PERIOD");
+
         unchecked {
-            uint shares = (bond.amount + _amount) * (bond.period + _period) / 365;
-            uint expireEpoch = block.timestamp/DAY + bond.period + _period;
-            totalShares[bond.asset] += shares-bond.shares;
+            uint shares = (bond.amount + _amount) * newBondPeriod / 365;
+            uint expireEpoch = currentEpoch + newBondPeriod;
+            totalShares[bond.asset] = totalShares[bond.asset]+shares-bond.shares;
             _bond.shares = shares;
             _bond.amount += _amount;
             _bond.expireEpoch = expireEpoch;
-            _bond.period += _period;
+            _bond.period = newBondPeriod;
             _bond.mintTime = block.timestamp;
-            _bond.mintEpoch = epoch[bond.asset];
-            bondPaid[_id][bond.asset] = accRewardsPerShare[bond.asset][epoch[bond.asset]] * _bond.shares / 1e18;
+            _bond.mintEpoch = currentEpoch;
+            bondPaid[_id][bond.asset] = accRewardsPerShare[bond.asset][currentEpoch] * _bond.shares / 1e18;
         }
         emit ExtendLock(_period, _amount, _sender,  _id);
     }
