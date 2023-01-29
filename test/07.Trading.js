@@ -2595,13 +2595,14 @@ describe("Trading", function () {
       expect(await referrals.getReferred(owner.address)).to.equal(ethers.constants.HashZero); // Trader not referred
     });
     it("Referrer should receive the correct amount of referral rewards and decreased trading fee should be correct on both opening and closing and referral should be locked", async function () {
-      // await trading.connect(owner).setFees(true,3e8,1e8,1e8,1e8,1e8);
-      // await trading.connect(owner).setFees(false,3e8,1e8,1e8,1e8,1e8);
+      // Trading fee 0.1% of which referral fee 0.01%
+      await trading.connect(owner).setFees(true,5e6,5e6,1e6,1e6,0);
+      await trading.connect(owner).setFees(true,5e6,5e6,1e6,1e6,0);
+
       await pairscontract.connect(owner).setAssetBaseFundingRate(0, 0); // Funding rate messes with results because of time
       await referrals.connect(user).createReferralCode(ethers.utils.id("testcode"));
       expect(await stabletoken.balanceOf(user.address)).to.equal(parseEther("0"));
 
-      
       let TradeInfo = [parseEther("10000"), MockDAI.address, StableVault.address, parseEther("100"), 0, false, parseEther("0"), parseEther("0"), ethers.utils.id("testcode")];
       let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
       let message = ethers.utils.keccak256(
@@ -2615,12 +2616,12 @@ describe("Trading", function () {
       );
       
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
-      
 
       await trading.connect(owner).initiateMarketOrder(TradeInfo, PriceData, sig, PermitData, owner.address);
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Trade has opened
       let [margin,,,,,,,,,,,] = await position.trades(1);
-      expect(margin).to.equal(parseEther("9200")); // No fees taken after opening
+      expect(margin).to.equal(parseEther("9100")); // 10% fee discount
+      expect(await stabletoken.balanceOf(user.address)).to.equal(parseEther("100")); // 0.01% * 10000 * 100 = $100
 
       // Referral should be locked for the trader after being used once
       await referrals.connect(user).createReferralCode(ethers.utils.id("testcode2"));
@@ -2636,15 +2637,13 @@ describe("Trading", function () {
       let sig2 = await node.signMessage(
         Buffer.from(message2.substring(2), 'hex')
       );
-      let sigs2 = [sig2];
       let PermitData2 = [0, 0, 0, ethers.constants.HashZero, ethers.constants.HashZero, false]; // No permit needed
 
-      expect(await stabletoken.balanceOf(user.address)).to.equal(parseEther("100"));
       await trading.connect(owner).initiateMarketOrder(TradeInfo2, PriceData2, sig2, PermitData2, owner.address);
-      expect(await stabletoken.balanceOf(user.address)).to.equal(parseEther("200")); 
+      expect(await stabletoken.balanceOf(user.address)).to.equal(parseEther("200")); // + 0.01% * 10000 * 100 = $200
       expect(await position.assetOpenPositionsLength(0)).to.equal(2); // Trade has opened
       let [margin2,,,,,,,,,,,] = await position.trades(2);
-      expect(margin2).to.equal(parseEther("9200")); // No opening fees taken
+      expect(margin2).to.equal(parseEther("9100")); // 10% fee discount
 
       // Referrer should earn fees upon closing
       let PriceData3 = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
@@ -2657,10 +2656,9 @@ describe("Trading", function () {
       let sig3 = await node.signMessage(
         Buffer.from(message3.substring(2), 'hex')
       );
-      let sigs3 = [sig3];
       await trading.connect(owner).initiateCloseOrder(2, 1e10, PriceData3, sig3, StableVault.address, MockDAI.address, owner.address);
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // One trade has closed
-      expect(await stabletoken.balanceOf(user.address)).to.equal(parseEther("292"));
+      expect(await stabletoken.balanceOf(user.address)).to.equal(parseEther("291")); // + 0.01% * 9100 * 100 = $291
 
       // Closing last position
       let PriceData4 = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
@@ -2673,10 +2671,9 @@ describe("Trading", function () {
       let sig4 = await node.signMessage(
         Buffer.from(message4.substring(2), 'hex')
       );
-      let sigs4 = [sig4];
       await trading.connect(owner).initiateCloseOrder(1, 1e10, PriceData4, sig4, StableVault.address, StableToken.address, owner.address);
       expect(await position.assetOpenPositionsLength(0)).to.equal(0); // Both trades have closed
-      expect(await stabletoken.balanceOf(user.address)).to.equal(parseEther("384")); // Closing: 2 * $1,000,000 * 0.01% = $200
+      expect(await stabletoken.balanceOf(user.address)).to.equal(parseEther("382")); // + 0.01% * 9100 * 100 = $382
     });
   });
   describe("Comparing node's prices to Chainlink price feed", function () {

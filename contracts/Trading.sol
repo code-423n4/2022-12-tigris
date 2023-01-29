@@ -759,7 +759,7 @@ contract Trading is MetaContext, ITrading {
             uint _daoFeesPaid = _positionSize * _fees.daoFees / DIVISION_CONSTANT;
             _feePaid =
                 _positionSize
-                * (_fees.burnFees + _fees.botFees) // get total fee%
+                * (_fees.burnFees + _fees.botFees + (_referrer != address(0) ? _fees.referralFees : 0)) // get total fee%
                 / DIVISION_CONSTANT // divide by 100%
                 + _daoFeesPaid;
             emit FeesDistributed(
@@ -815,7 +815,7 @@ contract Trading is MetaContext, ITrading {
                 _referrer,
                 _referralFeesPaid
             );
-             _daoFeesPaid = _daoFeesPaid-_referralFeesPaid*2;
+            _daoFeesPaid = _daoFeesPaid-_referralFeesPaid*2;
         }
         if (_isBot) {
             unchecked {
@@ -828,7 +828,7 @@ contract Trading is MetaContext, ITrading {
             _daoFeesPaid = _daoFeesPaid - _botFeesPaid;
         }
         emit FeesDistributed(_tigAsset, _daoFeesPaid, _burnFeesPaid, _referralFeesPaid, _botFeesPaid, _referrer);
-        payout_ = _payout - _daoFeesPaid - _burnFeesPaid - _botFeesPaid;
+        payout_ = _payout - (_daoFeesPaid + _referralFeesPaid) - _burnFeesPaid - _botFeesPaid;
         IStable(_tigAsset).mintFor(address(this), _daoFeesPaid);
         IStable(_tigAsset).approve(address(gov), type(uint).max);
         gov.distribute(_tigAsset, _daoFeesPaid);
