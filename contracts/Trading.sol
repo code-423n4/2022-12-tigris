@@ -645,8 +645,9 @@ contract Trading is MetaContext, ITrading {
         if (_payout > 0) {
             unchecked {
                 _toMint = _handleCloseFees(_trade.asset, uint256(_payout)*_percent/DIVISION_CONSTANT, _trade.tigAsset, _positionSize*_percent/DIVISION_CONSTANT, _trade.trader, _isBot);
-                if (maxWinPercent > 0 && _toMint > _trade.margin*maxWinPercent/DIVISION_CONSTANT) {
-                    _toMint = _trade.margin*maxWinPercent/DIVISION_CONSTANT;
+                uint256 marginToClose = _trade.margin*_percent/DIVISION_CONSTANT;
+                if (maxWinPercent > 0 && _toMint > marginToClose*maxWinPercent/DIVISION_CONSTANT) {
+                    _toMint = marginToClose*maxWinPercent/DIVISION_CONSTANT;
                 }
             }
             _handleWithdraw(_trade, _stableVault, _outputToken, _toMint);

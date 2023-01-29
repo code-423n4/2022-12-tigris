@@ -2288,7 +2288,7 @@ describe("Trading", function () {
       await trading.connect(owner).initiateCloseOrder(1, 1e10, closePriceData, closeSig, StableVault.address, StableToken.address, owner.address);
       expect(await stabletoken.balanceOf(owner.address)).to.equal(parseEther("500")); // Margin - 10% * 5 * Margin = $500
     });
-    it("Max win should be capped to 10x", async function () {
+    it("Max win should be capped to 10x on full close", async function () {
       await trading.connect(owner).setMaxWinPercent(1e11);
       await pairscontract.connect(owner).setAssetBaseFundingRate(0, 0); // Funding rate messes with results because of time
       await trading.connect(owner).setFees(true,0,0,0,0,0); // Easier to calculate without fees
@@ -2323,6 +2323,42 @@ describe("Trading", function () {
       
       await trading.connect(owner).initiateCloseOrder(1, 1e10, closePriceData, closeSig, StableVault.address, StableToken.address, owner.address);
       expect(await stabletoken.balanceOf(owner.address)).to.equal(parseEther("10000")); // Max win is Margin * 10 = $10,000
+    });
+    it("Max win should be capped to 10x on partial close relative to margin being closed", async function () {
+      await trading.connect(owner).setMaxWinPercent(1e11);
+      await pairscontract.connect(owner).setAssetBaseFundingRate(0, 0); // Funding rate messes with results because of time
+      await trading.connect(owner).setFees(true,0,0,0,0,0); // Easier to calculate without fees
+      await trading.connect(owner).setFees(false,0,0,0,0,0); // Easier to calculate without fees
+      let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
+      let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let openMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+        )
+      );
+      let openSig = await node.signMessage(
+        Buffer.from(openMessage.substring(2), 'hex')
+      );
+      
+      let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
+      await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
+      expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Trade has opened
+      expect(await stabletoken.balanceOf(owner.address)).to.equal(0); // Starts with zero balance
+
+      let closePriceData = [node.address, 0, parseEther("100000"), 0, 2000000000, false]; // Price 1000% higher
+      let closeMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("100000"), 0, 2000000000, false]
+        )
+      );
+      let closeSig = await node.signMessage(
+        Buffer.from(closeMessage.substring(2), 'hex')
+      );
+      
+      await trading.connect(owner).initiateCloseOrder(1, 5e9, closePriceData, closeSig, StableVault.address, StableToken.address, owner.address);
+      expect(await stabletoken.balanceOf(owner.address)).to.equal(parseEther("5000")); // Max win is 50% * margin * 10 = $5,000
     });
     it("Max win should be unlimited if max win is set to zero", async function () {
       await trading.connect(owner).setMaxWinPercent(0);
