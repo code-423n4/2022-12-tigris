@@ -284,7 +284,7 @@ contract Trading is MetaContext, ITrading {
         _handleDeposit(
             _trade.tigAsset,
             _marginAsset,
-            _addMargin - _fee,
+            _addMargin,
             _stableVault,
             _permitData,
             _trader
