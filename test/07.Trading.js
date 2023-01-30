@@ -776,6 +776,56 @@ describe("Trading", function () {
     /**
      * Non-reverting limit order tests
      */
+    it("Executing long order where TP would go past open price should remove TP", async function () {
+      // Create limit order
+      let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("21000"), parseEther("0"), ethers.constants.HashZero];
+      let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
+      await trading.connect(owner).initiateLimitOrder(TradeInfo, 2, parseEther("20000"), PermitData, owner.address);
+      expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
+
+      // Execute limit order
+      let PriceData = [node.address, 0, parseEther("21000"), 0, 2000000000, false]; // 0% spread
+      let message = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("21000"), 0, 2000000000, false]
+        )
+      );
+      let sig = await node.signMessage(
+        Buffer.from(message.substring(2), 'hex')
+      );
+
+      await trading.connect(user).executeLimitOrder(1, PriceData, sig);
+      expect(await position.limitOrdersLength(0)).to.equal(0); // Limit order executed
+      expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Creates open position
+      let [,,,,,tp,,,,,,] = await position.trades(1);
+      expect(tp).to.equal(0); // Should have removed TP
+    });
+    it("Executing short order where TP would go past open price should remove TP", async function () {
+      // Create limit order
+      let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, false, parseEther("19000"), parseEther("0"), ethers.constants.HashZero];
+      let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
+      await trading.connect(owner).initiateLimitOrder(TradeInfo, 2, parseEther("20000"), PermitData, owner.address);
+      expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
+
+      // Execute limit order
+      let PriceData = [node.address, 0, parseEther("19000"), 0, 2000000000, false]; // 0% spread
+      let message = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("19000"), 0, 2000000000, false]
+        )
+      );
+      let sig = await node.signMessage(
+        Buffer.from(message.substring(2), 'hex')
+      );
+
+      await trading.connect(user).executeLimitOrder(1, PriceData, sig);
+      expect(await position.limitOrdersLength(0)).to.equal(0); // Limit order executed
+      expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Creates open position
+      let [,,,,,tp,,,,,,] = await position.trades(1);
+      expect(tp).to.equal(0); // Should have removed TP
+    });
     it("Executing limit order before a second has passed should have no bot fees", async function () {
       // Create limit order
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];

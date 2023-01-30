@@ -528,14 +528,12 @@ contract Trading is MetaContext, ITrading {
             } 
             if(trade.direction) {
                 trade.price += trade.price * _spread / DIVISION_CONSTANT;
-            } else {
-                trade.price -= trade.price * _spread / DIVISION_CONSTANT;
-            }
-            if (trade.direction) {
                 tradingExtension.modifyLongOi(trade.asset, trade.tigAsset, true, trade.margin*trade.leverage/1e18);
             } else {
+                trade.price -= trade.price * _spread / DIVISION_CONSTANT;
                 tradingExtension.modifyShortOi(trade.asset, trade.tigAsset, true, trade.margin*trade.leverage/1e18);
             }
+            if (trade.direction ? trade.tpPrice <= trade.price : trade.tpPrice >= trade.price) position.modifyTp(_id, 0);
             _updateFunding(trade.asset, trade.tigAsset);
             position.executeLimitOrder(_id, trade.price, trade.margin);
             emit LimitOrderExecuted(trade.asset, trade.direction, trade.price, trade.leverage, trade.margin, _id, trade.trader, _msgSender());
