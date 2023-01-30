@@ -5,8 +5,8 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "../interfaces/IPosition.sol";
 
 interface IPrice {
-    function latestAnswer() external view returns (int256);
-    function decimals() external view returns (uint256);
+    function latestRoundData() external view returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound);
+    function decimals() external view returns (uint8);
 }
 
 struct PriceData {
@@ -108,8 +108,8 @@ library TradingLibrary {
         require(block.timestamp <= _priceData.timestamp + _validSignatureTimer, "ExpSig");
         require(_priceData.price > 0, "NoPrice");
         if (_chainlinkEnabled && _chainlinkFeed != address(0)) {
-            int256 assetChainlinkPriceInt = IPrice(_chainlinkFeed).latestAnswer();
-            if (assetChainlinkPriceInt != 0) {
+            (uint80 roundId, int256 assetChainlinkPriceInt, , uint256 updatedAt, uint80 answeredInRound) = IPrice(_chainlinkFeed).latestRoundData();
+            if (answeredInRound >= roundId && updatedAt > 0 && assetChainlinkPriceInt != 0) {
                 uint256 assetChainlinkPrice = uint256(assetChainlinkPriceInt) * 10**(18 - IPrice(_chainlinkFeed).decimals());
                 require(
                     _priceData.price < assetChainlinkPrice+assetChainlinkPrice*2/100 &&
