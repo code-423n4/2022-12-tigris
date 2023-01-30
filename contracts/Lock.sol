@@ -17,6 +17,7 @@ contract Lock is Ownable{
 
     mapping(address => bool) public allowedAssets;
     mapping(address => uint) public totalLocked;
+    mapping(address => bool) private isApproved;
 
     constructor(
         address _bondNFTAddress,
@@ -115,7 +116,10 @@ contract Lock is Ownable{
             uint balanceBefore = IERC20(assets[i]).balanceOf(address(this));
             IGovNFT(govNFT).claim(assets[i]);
             uint balanceAfter = IERC20(assets[i]).balanceOf(address(this));
-            IERC20(assets[i]).approve(address(bondNFT), type(uint256).max);
+            if (!isApproved[assets[i]]) {
+                IERC20(assets[i]).approve(address(bondNFT), type(uint256).max);
+                isApproved[assets[i]] = true;
+            }
             bondNFT.distribute(assets[i], balanceAfter - balanceBefore);
         }
     }
