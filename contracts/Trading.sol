@@ -773,6 +773,10 @@ contract Trading is MetaContext, ITrading {
             );
             IStable(_tigAsset).mintFor(address(this), _daoFeesPaid);
         }
+        if (!marginApproved[_tigAsset]) {
+            IStable(_tigAsset).approve(address(gov), type(uint).max);
+            marginApproved[_tigAsset] = true;
+        }
         gov.distribute(_tigAsset, IStable(_tigAsset).balanceOf(address(this)));
     }
 
@@ -831,7 +835,6 @@ contract Trading is MetaContext, ITrading {
         emit FeesDistributed(_tigAsset, _daoFeesPaid, _burnFeesPaid, _referralFeesPaid, _botFeesPaid, _referrer);
         payout_ = _payout - (_daoFeesPaid + _referralFeesPaid) - _burnFeesPaid - _botFeesPaid;
         IStable(_tigAsset).mintFor(address(this), _daoFeesPaid);
-        IStable(_tigAsset).approve(address(gov), type(uint).max);
         gov.distribute(_tigAsset, _daoFeesPaid);
         return payout_;
     }
