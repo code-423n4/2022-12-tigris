@@ -2,7 +2,6 @@
   "dependencies": {
     "@nomiclabs/hardhat-etherscan": "^3.1.2",
     "@nomiclabs/hardhat-waffle": "^2.0.3",
-    "@openzeppelin/contracts": "^4.8.0",
     "chai": "^4.3.7",
     "dotenv": "^16.0.3",
     "eth-permit": "^0.2.3",
@@ -13,6 +12,7 @@
     "solidity-coverage": "^0.8.2"
   },
   "devDependencies": {
+    "@openzeppelin/contracts": "^4.8.1",
     "hardhat-gas-reporter": "^1.0.9"
   }
 }

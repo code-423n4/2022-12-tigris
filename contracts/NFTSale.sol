@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -17,7 +17,7 @@ interface IERC20 {
 
 contract NFTSale is Ownable {
 
-    uint public price;
+    uint256 public price;
     IERC721 public nft;
     IERC20 public token;
 
@@ -29,7 +29,7 @@ contract NFTSale is Ownable {
     }
 
 
-    function setPrice(uint _price) external onlyOwner {
+    function setPrice(uint256 _price) external onlyOwner {
         price = _price;
     }
 
@@ -37,15 +37,15 @@ contract NFTSale is Ownable {
         return nft.balanceOf(address(this));
     }
 
-    function buy(uint _amount) external {
+    function buy(uint256 _amount) external {
         require(_amount <= availableIds.length, "Not enough for sale");
-        uint _tokenAmount = _amount*price;
+        uint256 _tokenAmount = _amount*price;
         token.transferFrom(msg.sender, owner(), _tokenAmount);
         uint[] memory _sold = new uint[](_amount);
-        for (uint i=0; i<_amount; i++) {
+        for (uint256 i=0; i<_amount; i++) {
             _sold[i] = availableIds[(availableIds.length-i) - 1];
         }
-        for (uint i=0; i<_amount; i++) {
+        for (uint256 i=0; i<_amount; i++) {
             availableIds.pop();
         }
         nft.transferMany(msg.sender, _sold);

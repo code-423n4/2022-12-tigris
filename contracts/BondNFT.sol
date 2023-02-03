@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -7,24 +7,26 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract BondNFT is ERC721Enumerable, Ownable {
     
-    uint constant private DAY = 24 * 60 * 60;
+    uint256 constant private DAY = 1 days;
+    uint256 constant private WEEKDAYS = 7;
+    uint256 constant private COOLDOWN = 300;
 
     struct Bond {
-        uint id;
+        uint256 id;
         address owner;
         address asset;
-        uint amount;
-        uint mintEpoch;
-        uint mintTime;
-        uint expireEpoch;
-        uint pending;
-        uint shares;
-        uint period;
+        uint256 amount;
+        uint256 mintEpoch;
+        uint256 mintTime;
+        uint256 expireEpoch;
+        uint256 pending;
+        uint256 shares;
+        uint256 period;
         bool expired;
     }
 
     mapping(address => uint256) public epoch;
-    uint private totalBonds;
+    uint256 private totalBonds;
     string public baseURI;
     address public manager;
     address[] public assets;
@@ -33,7 +35,7 @@ contract BondNFT is ERC721Enumerable, Ownable {
     mapping(address => uint) private assetsIndex;
     mapping(uint256 => mapping(address => uint256)) private bondPaid;
     mapping(address => mapping(uint256 => uint256)) private accRewardsPerShare; // tigAsset => epoch => accRewardsPerShare
-    mapping(uint => Bond) private _idToBond;
+    mapping(uint256 => Bond) private _idToBond;
     mapping(address => uint) public totalShares;
     mapping(address => mapping(address => uint)) public userDebt; // user => tigAsset => amount
 
@@ -56,14 +58,14 @@ contract BondNFT is ERC721Enumerable, Ownable {
      */
     function createLock(
         address _asset,
-        uint _amount,
-        uint _period,
+        uint256 _amount,
+        uint256 _period,
         address _owner
-    ) external onlyManager() returns(uint id) {
+    ) external onlyManager() returns(uint256 id) {
         require(allowedAsset[_asset], "!Asset");
         unchecked {
-            uint shares = _amount * _period / 365;
-            uint expireEpoch = epoch[_asset] + _period;
+            uint256 shares = _amount * _period / 365;
+            uint256 expireEpoch = epoch[_asset] + _period;
             id = ++totalBonds;
             totalShares[_asset] += shares;
             Bond memory _bond = Bond(
@@ -95,10 +97,10 @@ contract BondNFT is ERC721Enumerable, Ownable {
      * @param _sender address extending the bond
      */
     function extendLock(
-        uint _id,
+        uint256 _id,
         address _asset,
-        uint _amount,
-        uint _period,
+        uint256 _amount,
+        uint256 _period,
         address _sender
     ) external onlyManager() {
         Bond memory bond = idToBond(_id);
@@ -107,16 +109,16 @@ contract BondNFT is ERC721Enumerable, Ownable {
         require(!bond.expired, "Expired");
         require(bond.asset == _asset, "!BondAsset");
         require(bond.pending == 0);
-        uint currentEpoch = block.timestamp/DAY;
+        uint256 currentEpoch = block.timestamp/DAY;
         require(epoch[bond.asset] == block.timestamp/DAY, "Bad epoch");
-        uint pendingEpochs = bond.expireEpoch - currentEpoch;
-        uint newBondPeriod = pendingEpochs + _period;
+        uint256 pendingEpochs = bond.expireEpoch - currentEpoch;
+        uint256 newBondPeriod = pendingEpochs + _period;
         require(newBondPeriod >= 7, "MIN PERIOD");
         require(bond.period+_period <= 365, "MAX PERIOD");
 
         unchecked {
-            uint shares = (bond.amount + _amount) * newBondPeriod / 365;
-            uint expireEpoch = currentEpoch + newBondPeriod;
+            uint256 shares = (bond.amount + _amount) * newBondPeriod / 365;
+            uint256 expireEpoch = currentEpoch + newBondPeriod;
             totalShares[bond.asset] = totalShares[bond.asset]+shares-bond.shares;
             _bond.shares = shares;
             _bond.amount += _amount;
@@ -140,9 +142,9 @@ contract BondNFT is ERC721Enumerable, Ownable {
      * @return _owner bond owner
      */
     function release(
-        uint _id,
+        uint256 _id,
         address _releaser
-    ) external onlyManager() returns(uint amount, uint lockAmount, address asset, address _owner) {
+    ) external onlyManager() returns(uint256 amount, uint256 lockAmount, address asset, address _owner) {
         Bond memory bond = idToBond(_id);
         require(bond.expired, "!expire");
         if (_releaser != bond.owner) {
@@ -153,7 +155,7 @@ contract BondNFT is ERC721Enumerable, Ownable {
         amount = bond.amount;
         unchecked {
             totalShares[bond.asset] -= bond.shares;
-            uint _pendingDelta = (bond.shares * accRewardsPerShare[bond.asset][epoch[bond.asset]] / 1e18 - bondPaid[_id][bond.asset]) - (bond.shares * accRewardsPerShare[bond.asset][bond.expireEpoch-1] / 1e18 - bondPaid[_id][bond.asset]);
+            uint256 _pendingDelta = (bond.shares * accRewardsPerShare[bond.asset][epoch[bond.asset]] / 1e18 - bondPaid[_id][bond.asset]) - (bond.shares * accRewardsPerShare[bond.asset][bond.expireEpoch-1] / 1e18 - bondPaid[_id][bond.asset]);
             if (totalShares[bond.asset] > 0) {
                 accRewardsPerShare[bond.asset][epoch[bond.asset]] += _pendingDelta*1e18/totalShares[bond.asset];
             }
@@ -175,9 +177,9 @@ contract BondNFT is ERC721Enumerable, Ownable {
      * @return tigAsset tigAsset token address
      */
     function claim(
-        uint _id,
+        uint256 _id,
         address _claimer
-    ) public onlyManager() returns(uint amount, address tigAsset) {
+    ) public onlyManager() returns(uint256 amount, address tigAsset) {
         Bond memory bond = idToBond(_id);
         require(_claimer == bond.owner, "!owner");
         amount = bond.pending;
@@ -199,7 +201,7 @@ contract BondNFT is ERC721Enumerable, Ownable {
     function claimDebt(
         address _user,
         address _tigAsset
-    ) public onlyManager() returns(uint amount) {
+    ) public onlyManager() returns(uint256 amount) {
         amount = userDebt[_user][_tigAsset];
         userDebt[_user][_tigAsset] = 0;
         IERC20(_tigAsset).transfer(manager, amount);
@@ -213,14 +215,14 @@ contract BondNFT is ERC721Enumerable, Ownable {
      */
     function distribute(
         address _tigAsset,
-        uint _amount
+        uint256 _amount
     ) external {
         if (!allowedAsset[_tigAsset]) return;
-        uint aEpoch;
+        uint256 aEpoch;
         unchecked {
             aEpoch = block.timestamp / DAY;
             if (aEpoch > epoch[_tigAsset]) {
-                for (uint i=epoch[_tigAsset]; i<aEpoch; i++) {
+                for (uint256 i=epoch[_tigAsset]; i<aEpoch; i++) {
                     epoch[_tigAsset] += 1;
                     accRewardsPerShare[_tigAsset][i+1] = accRewardsPerShare[_tigAsset][i];
                 }
@@ -244,7 +246,7 @@ contract BondNFT is ERC721Enumerable, Ownable {
         bond.owner = ownerOf(_id);
         bond.expired = bond.expireEpoch <= epoch[bond.asset] ? true : false;
         unchecked {
-            uint _accRewardsPerShare = accRewardsPerShare[bond.asset][bond.expired ? bond.expireEpoch-1 : epoch[bond.asset]];
+            uint256 _accRewardsPerShare = accRewardsPerShare[bond.asset][bond.expired ? bond.expireEpoch-1 : epoch[bond.asset]];
             bond.pending = bond.shares * _accRewardsPerShare / 1e18 - bondPaid[_id][bond.asset];
         }
     }
@@ -292,7 +294,7 @@ contract BondNFT is ERC721Enumerable, Ownable {
 
     function transferMany(address _to, uint[] calldata _ids) external {
         unchecked {
-            for (uint i=0; i<_ids.length; i++) {
+            for (uint256 i=0; i<_ids.length; i++) {
                 _transfer(_msgSender(), _to, _ids[i]);
             }
         }
@@ -300,7 +302,7 @@ contract BondNFT is ERC721Enumerable, Ownable {
 
     function transferFromMany(address _from, address _to, uint[] calldata _ids) external {
         unchecked {
-            for (uint i=0; i<_ids.length; i++) {
+            for (uint256 i=0; i<_ids.length; i++) {
                 transferFrom(_from, _to, _ids[i]);
             }
         }
@@ -308,7 +310,7 @@ contract BondNFT is ERC721Enumerable, Ownable {
 
     function approveMany(address _to, uint[] calldata _ids) external {
         unchecked {
-            for (uint i=0; i<_ids.length; i++) {
+            for (uint256 i=0; i<_ids.length; i++) {
                 approve(_to, _ids[i]);
             }
         }
@@ -339,7 +341,7 @@ contract BondNFT is ERC721Enumerable, Ownable {
         Bond memory bond = idToBond(_id);
         require(bond.expireEpoch > block.timestamp/DAY, "Transfer after expiration");
         unchecked {
-            require(block.timestamp > bond.mintTime + 300, "Recent update");
+            require(block.timestamp > bond.mintTime + COOLDOWN, "Recent update");
             userDebt[from][bond.asset] += bond.pending;
             bondPaid[_id][bond.asset] += bond.pending;
         }
@@ -349,7 +351,7 @@ contract BondNFT is ERC721Enumerable, Ownable {
     function balanceIds(address _user) public view returns (uint[] memory) {
         uint[] memory _ids = new uint[](balanceOf(_user));
         unchecked {
-            for (uint i=0; i<_ids.length; i++) {
+            for (uint256 i=0; i<_ids.length; i++) {
                 _ids[i] = tokenOfOwnerByIndex(_user, i);
             }
         }

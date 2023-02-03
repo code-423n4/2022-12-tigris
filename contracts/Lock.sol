@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;
+pragma solidity 0.8.18;
 
-import "hardhat/console.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IBondNFT.sol";
 import "./interfaces/IGovNFT.sol";
 
-contract Lock is Ownable{
+contract Lock is Ownable {
 
-    uint public constant minPeriod = 7;
-    uint public constant maxPeriod = 365;
+    uint256 public constant minPeriod = 7;
+    uint256 public constant maxPeriod = 365;
 
     IBondNFT public immutable bondNFT;
     IGovNFT public immutable govNFT;
@@ -36,7 +35,7 @@ contract Lock is Ownable{
         uint256 _id
     ) public returns (address) {
         claimGovFees();
-        (uint _amount, address _tigAsset) = bondNFT.claim(_id, msg.sender);
+        (uint256 _amount, address _tigAsset) = bondNFT.claim(_id, msg.sender);
         IERC20(_tigAsset).transfer(msg.sender, _amount);
         return _tigAsset;
     }
@@ -49,7 +48,7 @@ contract Lock is Ownable{
         address _tigAsset
     ) external {
         claimGovFees();
-        uint amount = bondNFT.claimDebt(msg.sender, _tigAsset);
+        uint256 amount = bondNFT.claimDebt(msg.sender, _tigAsset);
         IERC20(_tigAsset).transfer(msg.sender, amount);
     }
 
@@ -61,8 +60,8 @@ contract Lock is Ownable{
      */
     function lock(
         address _asset,
-        uint _amount,
-        uint _period
+        uint256 _amount,
+        uint256 _period
     ) public {
         require(_period <= maxPeriod, "MAX PERIOD");
         require(_period >= minPeriod, "MIN PERIOD");
@@ -83,9 +82,9 @@ contract Lock is Ownable{
      * @param _period number of days being added
      */
     function extendLock(
-        uint _id,
-        uint _amount,
-        uint _period
+        uint256 _id,
+        uint256 _amount,
+        uint256 _period
     ) public {
         address _asset = claim(_id);
         IERC20(_asset).transferFrom(msg.sender, address(this), _amount);
@@ -98,10 +97,10 @@ contract Lock is Ownable{
      * @param _id Bond id being released
      */
     function release(
-        uint _id
+        uint256 _id
     ) public {
         claimGovFees();
-        (uint amount, uint lockAmount, address asset, address _owner) = bondNFT.release(_id, msg.sender);
+        (uint256 amount, uint256 lockAmount, address asset, address _owner) = bondNFT.release(_id, msg.sender);
         totalLocked[asset] -= lockAmount;
         IERC20(asset).transfer(_owner, amount);
     }
@@ -112,10 +111,10 @@ contract Lock is Ownable{
     function claimGovFees() public {
         address[] memory assets = bondNFT.getAssets();
 
-        for (uint i=0; i < assets.length; i++) {
-            uint balanceBefore = IERC20(assets[i]).balanceOf(address(this));
+        for (uint256 i=0; i < assets.length; i++) {
+            uint256 balanceBefore = IERC20(assets[i]).balanceOf(address(this));
             IGovNFT(govNFT).claim(assets[i]);
-            uint balanceAfter = IERC20(assets[i]).balanceOf(address(this));
+            uint256 balanceAfter = IERC20(assets[i]).balanceOf(address(this));
             if (!isApproved[assets[i]]) {
                 IERC20(assets[i]).approve(address(bondNFT), type(uint256).max);
                 isApproved[assets[i]] = true;
