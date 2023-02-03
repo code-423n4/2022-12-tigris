@@ -2,7 +2,7 @@
 
 import "../utils/TradingLibrary.sol";
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.18;
 
 interface ITrading {
 
@@ -36,8 +36,8 @@ interface ITrading {
     ) external;
 
     function initiateCloseOrder(
-        uint _id,
-        uint _percent,
+        uint256 _id,
+        uint256 _percent,
         PriceData calldata _priceData,
         bytes calldata _signature,
         address _stableVault,
@@ -47,9 +47,11 @@ interface ITrading {
 
     function addMargin(
         uint256 _id,
-        address _marginAsset,
         address _stableVault,
+        address _marginAsset,
         uint256 _addMargin,
+        PriceData calldata _priceData,
+        bytes calldata _signature,
         ERC20PermitData calldata _permitData,
         address _trader
     ) external;
@@ -65,8 +67,8 @@ interface ITrading {
     ) external;
 
     function addToPosition(
-        uint _id,
-        uint _addMargin,
+        uint256 _id,
+        uint256 _addMargin,
         PriceData calldata _priceData,
         bytes calldata _signature,
         address _stableVault,
@@ -90,27 +92,27 @@ interface ITrading {
 
     function updateTpSl(
         bool _type, // true is TP
-        uint _id,
-        uint _limitPrice,
+        uint256 _id,
+        uint256 _limitPrice,
         PriceData calldata _priceData,
         bytes calldata _signature,
         address _trader
     ) external;
 
     function executeLimitOrder(
-        uint _id, 
+        uint256 _id, 
         PriceData calldata _priceData,
         bytes calldata _signature
     ) external;
 
     function liquidatePosition(
-        uint _id,
+        uint256 _id,
         PriceData calldata _priceData,
         bytes calldata _signature
     ) external;
 
     function limitClose(
-        uint _id,
+        uint256 _id,
         bool _tp,
         PriceData calldata _priceData,
         bytes calldata _signature

@@ -1,5 +1,5 @@
-//SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.8.18;
 
 import "./utils/MetaContext.sol";
 import "./interfaces/ITrading.sol";
@@ -13,10 +13,10 @@ import "./utils/TradingLibrary.sol";
 
 interface ITradingExtension {
     function getVerifiedPrice(
-        uint _asset,
+        uint256 _asset,
         PriceData calldata _priceData,
         bytes calldata _signature,
-        uint _withSpreadIsLong
+        uint256 _withSpreadIsLong
     ) external returns(uint256 _price, uint256 _spread);
     function getRef(
         address _trader
@@ -25,39 +25,39 @@ interface ITradingExtension {
         bytes32 _referral,
         address _trader
     ) external;
-    function validateTrade(uint _asset, address _tigAsset, uint _margin, uint _leverage) external view;
+    function validateTrade(uint256 _asset, address _tigAsset, uint256 _margin, uint256 _leverage) external view;
     function isPaused() external view returns(bool);
     function minPos(address) external view returns(uint);
     function modifyLongOi(
-        uint _asset,
+        uint256 _asset,
         address _tigAsset,
         bool _onOpen,
-        uint _size
+        uint256 _size
     ) external;
     function modifyShortOi(
-        uint _asset,
+        uint256 _asset,
         address _tigAsset,
         bool _onOpen,
-        uint _size
+        uint256 _size
     ) external;
     function paused() external returns(bool);
     function _limitClose(
-        uint _id,
+        uint256 _id,
         bool _tp,
         PriceData calldata _priceData,
         bytes calldata _signature
-    ) external returns(uint _limitPrice, address _tigAsset);
+    ) external returns(uint256 _limitPrice, address _tigAsset);
     function _checkGas() external view;
     function _closePosition(
-        uint _id,
-        uint _price,
-        uint _percent
+        uint256 _id,
+        uint256 _price,
+        uint256 _percent
     ) external returns (IPosition.Trade memory _trade, uint256 _positionSize, int256 _payout);
 }
 
 interface IStable is IERC20 {
-    function burnFrom(address account, uint amount) external;
-    function mintFor(address account, uint amount) external;
+    function burnFrom(address account, uint256 amount) external;
+    function mintFor(address account, uint256 amount) external;
 }
 
 interface ExtendedIERC20 is IERC20 {
@@ -78,28 +78,40 @@ interface ERC20Permit is IERC20 {
 
 contract Trading is MetaContext, ITrading {
 
-    error LimitNotSet(); //7
+    error LimitNotSet();
     error NotLiquidatable();
     error TradingPaused();
     error BadDeposit();
     error BadWithdraw();
+    error BadStopLoss();
+    error IsLimit();
     error ValueNotEqualToMargin();
     error BadLeverage();
     error NotMargin();
+    error NotAllowedInVault();
+    error NotVault();
+    error NotOwner();
     error NotAllowedPair();
+    error WaitDelay();
+    error NotProxy();
     error BelowMinPositionSize();
     error BadClosePercent();
     error NoPrice();
     error LiqThreshold();
+    error CloseToMaxPnL();
+    error BadSetter();
+    error BadConstructor();
+    error NotLimit();
+    error LimitNotMet();
 
-    uint constant private DIVISION_CONSTANT = 1e10; // 100%
-    uint private constant liqPercent = 9e9; // 90%
+    uint256 private constant DIVISION_CONSTANT = 1e10; // 100%
+    uint256 private constant LIQPERCENT = 9e9; // 90%
 
     struct Fees {
-        uint daoFees;
-        uint burnFees;
-        uint referralFees;
-        uint botFees;
+        uint256 daoFees;
+        uint256 burnFees;
+        uint256 referralFees;
+        uint256 botFees;
     }
     Fees public openFees = Fees(
         0,
@@ -113,10 +125,10 @@ contract Trading is MetaContext, ITrading {
         0,
         0
     );
-    uint public limitOrderPriceRange = 1e8; // 1%
+    uint256 public limitOrderPriceRange = 1e8; // 1%
 
-    uint public maxWinPercent;
-    uint public vaultFundingPercent;
+    uint256 public maxWinPercent;
+    uint256 public vaultFundingPercent;
 
     IPairsContract private pairsContract;
     IPosition private position;
@@ -124,12 +136,12 @@ contract Trading is MetaContext, ITrading {
     ITradingExtension private tradingExtension;
 
     struct Delay {
-        uint delay; // Block number where delay ends
+        uint256 delay; // Block timestamp where delay ends
         bool actionType; // True for open, False for close
     }
-    mapping(uint => Delay) public blockDelayPassed; // id => Delay
-    uint public blockDelay;
-    mapping(uint => uint) public limitDelay; // id => block.timestamp
+    mapping(uint256 => Delay) public timeDelayPassed; // id => Delay
+    mapping(uint256 => uint) public lastLimitUpdate; // id => timestamp
+    uint256 public timeDelay;
 
     mapping(address => bool) public allowedVault;
 
@@ -140,12 +152,18 @@ contract Trading is MetaContext, ITrading {
 
     mapping(address => Proxy) public proxyApprovals;
 
+    mapping(address => bool) public marginApproved;
+
     constructor(
         address _position,
         address _gov,
         address _pairsContract
     )
     {
+        if (_position == address(0)
+            || _gov == address(0)
+            || _pairsContract == address(0)
+        ) revert BadConstructor();
         position = IPosition(_position);
         gov = IGovNFT(_gov);
         pairsContract = IPairsContract(_pairsContract);
@@ -220,8 +238,8 @@ contract Trading is MetaContext, ITrading {
      * @param _trader address the trade is initiated for
      */
     function initiateCloseOrder(
-        uint _id,
-        uint _percent,
+        uint256 _id,
+        uint256 _percent,
         PriceData calldata _priceData,
         bytes calldata _signature,
         address _stableVault,
@@ -235,7 +253,7 @@ contract Trading is MetaContext, ITrading {
         _checkOwner(_id, _trader);
         _checkVault(_stableVault, _outputToken);
         IPosition.Trade memory _trade = position.trades(_id);
-        if (_trade.orderType != 0) revert("4"); //IsLimit        
+        if (_trade.orderType != 0) revert IsLimit();        
         (uint256 _price,) = tradingExtension.getVerifiedPrice(_trade.asset, _priceData, _signature, 0);
 
         if (_percent > DIVISION_CONSTANT || _percent == 0) revert BadClosePercent();
@@ -253,8 +271,8 @@ contract Trading is MetaContext, ITrading {
      * @param _trader address the trade is initiated for
      */
     function addToPosition(
-        uint _id,
-        uint _addMargin,
+        uint256 _id,
+        uint256 _addMargin,
         PriceData calldata _priceData,
         bytes calldata _signature,
         address _stableVault,
@@ -270,20 +288,24 @@ contract Trading is MetaContext, ITrading {
         IPosition.Trade memory _trade = position.trades(_id);
         tradingExtension.validateTrade(_trade.asset, _trade.tigAsset, _trade.margin + _addMargin, _trade.leverage);
         _checkVault(_stableVault, _marginAsset);
-        if (_trade.orderType != 0) revert("4"); //IsLimit
-        uint _fee = _handleOpenFees(_trade.asset, _addMargin*_trade.leverage/1e18, _trader, _trade.tigAsset, false);
+        if (_trade.orderType != 0) revert IsLimit();
+        (uint256 _price,) = tradingExtension.getVerifiedPrice(_trade.asset, _priceData, _signature, _trade.direction ? 1 : 2);
+        (,int256 _payout) = TradingLibrary.pnl(_trade.direction, _priceData.price, _trade.price, _trade.margin, _trade.leverage, _trade.accInterest);
+        unchecked {
+            if(maxWinPercent != 0 && _payout >= int256(_trade.margin*(maxWinPercent-DIVISION_CONSTANT)/DIVISION_CONSTANT)) revert CloseToMaxPnL();
+        }
+        uint256 _fee = _handleOpenFees(_trade.asset, _addMargin*_trade.leverage/1e18, _trader, _trade.tigAsset, false);
         _handleDeposit(
             _trade.tigAsset,
             _marginAsset,
-            _addMargin - _fee,
+            _addMargin,
             _stableVault,
             _permitData,
             _trader
         );
         position.setAccInterest(_id);
         unchecked {
-            (uint256 _price,) = tradingExtension.getVerifiedPrice(_trade.asset, _priceData, _signature, _trade.direction ? 1 : 2);
-            uint _positionSize = (_addMargin - _fee) * _trade.leverage / 1e18;
+            uint256 _positionSize = (_addMargin - _fee) * _trade.leverage / 1e18;
             if (_trade.direction) {
                 tradingExtension.modifyLongOi(_trade.asset, _trade.tigAsset, true, _positionSize);
             } else {
@@ -291,8 +313,8 @@ contract Trading is MetaContext, ITrading {
             }
             _updateFunding(_trade.asset, _trade.tigAsset);
             _addMargin -= _fee;
-            uint _newMargin = _trade.margin + _addMargin;
-            uint _newPrice = _trade.price*_trade.margin/_newMargin + _price*_addMargin/_newMargin;
+            uint256 _newMargin = _trade.margin + _addMargin;
+            uint256 _newPrice = _trade.price * _price * _newMargin /  (_trade.margin * _price + _addMargin * _trade.price);
 
             position.addToPosition(
                 _trade.id,
@@ -324,7 +346,7 @@ contract Trading is MetaContext, ITrading {
         address _tigAsset = IStableVault(_tradeInfo.stableVault).stable();
         tradingExtension.validateTrade(_tradeInfo.asset, _tigAsset, _tradeInfo.margin, _tradeInfo.leverage);
         _checkVault(_tradeInfo.stableVault, _tradeInfo.marginAsset);
-        if (_orderType == 0) revert("5");
+        if (_orderType == 0) revert NotLimit();
         if (_price == 0) revert NoPrice();
         tradingExtension._setReferral(_tradeInfo.referral, _trader);
         _handleDeposit(_tigAsset, _tradeInfo.marginAsset, _tradeInfo.margin, _tradeInfo.stableVault, _permitData, _trader);
@@ -344,7 +366,7 @@ contract Trading is MetaContext, ITrading {
                 _tigAsset
             )
         );
-        limitDelay[_id] = block.timestamp + 4;
+        lastLimitUpdate[_id] = block.timestamp+1;
         emit PositionOpened(_tradeInfo, _orderType, _price, _id, _trader, _tradeInfo.margin);
     }
 
@@ -369,17 +391,21 @@ contract Trading is MetaContext, ITrading {
 
     /**
      * @param _id position id
-     * @param _marginAsset Token being used to add to the position
      * @param _stableVault StableVault address
+     * @param _marginAsset Token being used to add to the position
      * @param _addMargin margin amount being added to the position
+     * @param _priceData verifiable off-chain price data
+     * @param _signature node signature
      * @param _permitData data and signature needed for token approval
      * @param _trader address the trade is initiated for
      */
     function addMargin(
         uint256 _id,
-        address _marginAsset,
         address _stableVault,
+        address _marginAsset,
         uint256 _addMargin,
+        PriceData calldata _priceData,
+        bytes calldata _signature,
         ERC20PermitData calldata _permitData,
         address _trader
     )
@@ -389,13 +415,18 @@ contract Trading is MetaContext, ITrading {
         _checkOwner(_id, _trader);
         _checkVault(_stableVault, _marginAsset);
         IPosition.Trade memory _trade = position.trades(_id);
+        tradingExtension.getVerifiedPrice(_trade.asset, _priceData, _signature, 0);
+        (,int256 _payout) = TradingLibrary.pnl(_trade.direction, _priceData.price, _trade.price, _trade.margin, _trade.leverage, _trade.accInterest);
+        unchecked {
+            if(maxWinPercent != 0 && _payout >= int256(_trade.margin*(maxWinPercent-DIVISION_CONSTANT)/DIVISION_CONSTANT)) revert CloseToMaxPnL();
+        }
         if (_trade.orderType != 0) revert(); //IsLimit
         IPairsContract.Asset memory asset = pairsContract.idToAsset(_trade.asset);
         _handleDeposit(_trade.tigAsset, _marginAsset, _addMargin, _stableVault, _permitData, _trader);
         unchecked {
             uint256 _newMargin = _trade.margin + _addMargin;
             uint256 _newLeverage = _trade.margin * _trade.leverage / _newMargin;
-            if (_newLeverage < asset.minLeverage) revert("!lev");
+            if (_newLeverage < asset.minLeverage) revert BadLeverage();
             position.modifyMargin(_id, _newMargin, _newLeverage);
             emit MarginModified(_id, _newMargin, _newLeverage, true, _trader);
         }
@@ -425,15 +456,18 @@ contract Trading is MetaContext, ITrading {
         _checkOwner(_id, _trader);
         _checkVault(_stableVault, _outputToken);
         IPosition.Trade memory _trade = position.trades(_id);
-        if (_trade.orderType != 0) revert(); //IsLimit
+        if (_trade.orderType != 0) revert IsLimit();
+        (uint256 _assetPrice,) = tradingExtension.getVerifiedPrice(_trade.asset, _priceData, _signature, 0);
+        (,int256 _payout) = TradingLibrary.pnl(_trade.direction, _assetPrice, _trade.price, _trade.margin, _trade.leverage, _trade.accInterest);
+        unchecked {
+            if(maxWinPercent != 0 && _payout >= int256(_trade.margin*(maxWinPercent-DIVISION_CONSTANT)/DIVISION_CONSTANT)) revert CloseToMaxPnL();
+        }
         IPairsContract.Asset memory asset = pairsContract.idToAsset(_trade.asset);
         uint256 _newMargin = _trade.margin - _removeMargin;
         uint256 _newLeverage = _trade.margin * _trade.leverage / _newMargin;
-        if (_newLeverage > asset.maxLeverage) revert("!lev");
-        (uint _assetPrice,) = tradingExtension.getVerifiedPrice(_trade.asset, _priceData, _signature, 0);
-        (,int256 _payout) = TradingLibrary.pnl(_trade.direction, _assetPrice, _trade.price, _newMargin, _newLeverage, _trade.accInterest);
+        if (_newLeverage > asset.maxLeverage) revert BadLeverage();
         unchecked {
-            if (_payout <= int256(_newMargin*(DIVISION_CONSTANT-liqPercent)/DIVISION_CONSTANT)) revert LiqThreshold();
+            if (_payout <= int256(_newMargin*(DIVISION_CONSTANT-LIQPERCENT)/DIVISION_CONSTANT)) revert LiqThreshold();
         }
         position.modifyMargin(_trade.id, _newMargin, _newLeverage);
         _handleWithdraw(_trade, _stableVault, _outputToken, _removeMargin);
@@ -450,8 +484,8 @@ contract Trading is MetaContext, ITrading {
      */
     function updateTpSl(
         bool _type,
-        uint _id,
-        uint _limitPrice,
+        uint256 _id,
+        uint256 _limitPrice,
         PriceData calldata _priceData,
         bytes calldata _signature,
         address _trader
@@ -460,8 +494,9 @@ contract Trading is MetaContext, ITrading {
     {
         _validateProxy(_trader);
         _checkOwner(_id, _trader);
+        _checkDelay(_id, true);
         IPosition.Trade memory _trade = position.trades(_id);
-        if (_trade.orderType != 0) revert("4"); //IsLimit
+        if (_trade.orderType != 0) revert IsLimit();
         if (_type) {
             position.modifyTp(_id, _limitPrice);
         } else {
@@ -469,6 +504,7 @@ contract Trading is MetaContext, ITrading {
             _checkSl(_limitPrice, _trade.direction, _price);
             position.modifySl(_id, _limitPrice);
         }
+        lastLimitUpdate[_id] = block.timestamp+1;
         emit UpdateTPSL(_id, _type, _limitPrice, _trader);
     }
 
@@ -478,7 +514,7 @@ contract Trading is MetaContext, ITrading {
      * @param _signature node signature
      */
     function executeLimitOrder(
-        uint _id, 
+        uint256 _id, 
         PriceData calldata _priceData,
         bytes calldata _signature
     ) 
@@ -488,36 +524,33 @@ contract Trading is MetaContext, ITrading {
             _checkDelay(_id, true);
             tradingExtension._checkGas();
             if (tradingExtension.paused()) revert TradingPaused();
-            require(block.timestamp >= limitDelay[_id]);
             IPosition.Trade memory trade = position.trades(_id);
-            uint _fee = _handleOpenFees(trade.asset, trade.margin*trade.leverage/1e18, trade.trader, trade.tigAsset, true);
+            trade.margin -= _handleOpenFees(trade.asset, trade.margin*trade.leverage/1e18, trade.trader, trade.tigAsset, block.timestamp > lastLimitUpdate[_id]);
             (uint256 _price, uint256 _spread) = tradingExtension.getVerifiedPrice(trade.asset, _priceData, _signature, 0);
-            if (trade.orderType == 0) revert("5");
-            if (_price > trade.price+trade.price*limitOrderPriceRange/DIVISION_CONSTANT || _price < trade.price-trade.price*limitOrderPriceRange/DIVISION_CONSTANT) revert("6"); //LimitNotMet
+            if (trade.orderType == 0) revert NotLimit();
+            if (_price > trade.price+trade.price*limitOrderPriceRange/DIVISION_CONSTANT || _price < trade.price-trade.price*limitOrderPriceRange/DIVISION_CONSTANT) revert LimitNotMet();
             if (trade.direction && trade.orderType == 1) {
-                if (trade.price < _price) revert("6"); //LimitNotMet
+                if (trade.price < _price) revert LimitNotMet();
             } else if (!trade.direction && trade.orderType == 1) {
-                if (trade.price > _price) revert("6"); //LimitNotMet
+                if (trade.price > _price) revert LimitNotMet();
             } else if (!trade.direction && trade.orderType == 2) {
-                if (trade.price < _price) revert("6"); //LimitNotMet
+                if (trade.price < _price) revert LimitNotMet();
                 trade.price = _price;
             } else {
-                if (trade.price > _price) revert("6"); //LimitNotMet
+                if (trade.price > _price) revert LimitNotMet();
                 trade.price = _price;
             } 
             if(trade.direction) {
                 trade.price += trade.price * _spread / DIVISION_CONSTANT;
-            } else {
-                trade.price -= trade.price * _spread / DIVISION_CONSTANT;
-            }
-            if (trade.direction) {
                 tradingExtension.modifyLongOi(trade.asset, trade.tigAsset, true, trade.margin*trade.leverage/1e18);
             } else {
+                trade.price -= trade.price * _spread / DIVISION_CONSTANT;
                 tradingExtension.modifyShortOi(trade.asset, trade.tigAsset, true, trade.margin*trade.leverage/1e18);
             }
+            if (trade.direction ? trade.tpPrice <= trade.price : trade.tpPrice >= trade.price) position.modifyTp(_id, 0);
             _updateFunding(trade.asset, trade.tigAsset);
-            position.executeLimitOrder(_id, trade.price, trade.margin - _fee);
-            emit LimitOrderExecuted(trade.asset, trade.direction, trade.price, trade.leverage, trade.margin - _fee, _id, trade.trader, _msgSender());
+            position.executeLimitOrder(_id, trade.price, trade.margin);
+            emit LimitOrderExecuted(trade.asset, trade.direction, trade.price, trade.leverage, trade.margin, _id, trade.trader, _msgSender());
         }
     }
 
@@ -528,7 +561,7 @@ contract Trading is MetaContext, ITrading {
      * @param _signature node signature
      */
     function liquidatePosition(
-        uint _id,
+        uint256 _id,
         PriceData calldata _priceData,
         bytes calldata _signature
     )
@@ -537,12 +570,12 @@ contract Trading is MetaContext, ITrading {
         unchecked {
             tradingExtension._checkGas();
             IPosition.Trade memory _trade = position.trades(_id);
-            if (_trade.orderType != 0) revert("4"); //IsLimit
+            if (_trade.orderType != 0) revert IsLimit();
 
             (uint256 _price,) = tradingExtension.getVerifiedPrice(_trade.asset, _priceData, _signature, 0);
             (uint256 _positionSizeAfterPrice, int256 _payout) = TradingLibrary.pnl(_trade.direction, _price, _trade.price, _trade.margin, _trade.leverage, _trade.accInterest);
             uint256 _positionSize = _trade.margin*_trade.leverage/1e18;
-            if (_payout > int256(_trade.margin*(DIVISION_CONSTANT-liqPercent)/DIVISION_CONSTANT)) revert NotLiquidatable();
+            if (_payout > int256(_trade.margin*(DIVISION_CONSTANT-LIQPERCENT)/DIVISION_CONSTANT)) revert NotLiquidatable();
             if (_trade.direction) {
                 tradingExtension.modifyLongOi(_trade.asset, _trade.tigAsset, false, _positionSize);
             } else {
@@ -563,16 +596,18 @@ contract Trading is MetaContext, ITrading {
      * @param _signature node signature
      */
     function limitClose(
-        uint _id,
+        uint256 _id,
         bool _tp,
         PriceData calldata _priceData,
         bytes calldata _signature
     )
         external
     {
-        _checkDelay(_id, false);
-        (uint _limitPrice, address _tigAsset) = tradingExtension._limitClose(_id, _tp, _priceData, _signature);
-        _closePosition(_id, DIVISION_CONSTANT, _limitPrice, address(0), _tigAsset, true);
+        if (_tp) {
+            _checkDelay(_id, false);
+        }
+        (uint256 _limitPrice, address _tigAsset) = tradingExtension._limitClose(_id, _tp, _priceData, _signature);
+        _closePosition(_id, DIVISION_CONSTANT, _limitPrice, address(0), _tigAsset, block.timestamp > lastLimitUpdate[_id]);
     }
 
     /**
@@ -600,9 +635,9 @@ contract Trading is MetaContext, ITrading {
      * @param _isBot false if closed via market order
      */
     function _closePosition(
-        uint _id,
-        uint _percent,
-        uint _price,
+        uint256 _id,
+        uint256 _percent,
+        uint256 _price,
         address _stableVault,
         address _outputToken,
         bool _isBot
@@ -613,7 +648,7 @@ contract Trading is MetaContext, ITrading {
         position.setAccInterest(_id);
         _updateFunding(_trade.asset, _trade.tigAsset);
         if (_percent < DIVISION_CONSTANT) {
-            if ((_trade.margin*_trade.leverage*(DIVISION_CONSTANT-_percent)/DIVISION_CONSTANT)/1e18 < tradingExtension.minPos(_trade.tigAsset)) revert("!size");
+            if ((_trade.margin*_trade.leverage*(DIVISION_CONSTANT-_percent)/DIVISION_CONSTANT)/1e18 < tradingExtension.minPos(_trade.tigAsset)) revert BelowMinPositionSize();
             position.reducePosition(_id, _percent);
         } else {
             position.burn(_id);
@@ -622,8 +657,9 @@ contract Trading is MetaContext, ITrading {
         if (_payout > 0) {
             unchecked {
                 _toMint = _handleCloseFees(_trade.asset, uint256(_payout)*_percent/DIVISION_CONSTANT, _trade.tigAsset, _positionSize*_percent/DIVISION_CONSTANT, _trade.trader, _isBot);
-                if (maxWinPercent > 0 && _toMint > _trade.margin*maxWinPercent/DIVISION_CONSTANT) {
-                    _toMint = _trade.margin*maxWinPercent/DIVISION_CONSTANT;
+                uint256 marginToClose = _trade.margin*_percent/DIVISION_CONSTANT;
+                if (maxWinPercent > 0 && _toMint > marginToClose*maxWinPercent/DIVISION_CONSTANT) {
+                    _toMint = marginToClose*maxWinPercent/DIVISION_CONSTANT;
                 }
             }
             _handleWithdraw(_trade, _stableVault, _outputToken, _toMint);
@@ -647,9 +683,12 @@ contract Trading is MetaContext, ITrading {
                 ERC20Permit(_marginAsset).permit(_trader, address(this), _permitData.amount, _permitData.deadline, _permitData.v, _permitData.r, _permitData.s);
             }
             uint256 _balBefore = tigAsset.balanceOf(address(this));
-            uint _marginDecMultiplier = 10**(18-ExtendedIERC20(_marginAsset).decimals());
+            uint256 _marginDecMultiplier = 10**(18-ExtendedIERC20(_marginAsset).decimals());
             IERC20(_marginAsset).transferFrom(_trader, address(this), _margin/_marginDecMultiplier);
-            IERC20(_marginAsset).approve(_stableVault, type(uint).max);
+            if (!marginApproved[_marginAsset]) {
+                IERC20(_marginAsset).approve(_stableVault, type(uint).max);
+                marginApproved[_marginAsset] = true;
+            }
             IStableVault(_stableVault).deposit(_marginAsset, _margin/_marginDecMultiplier);
             if (tigAsset.balanceOf(address(this)) != _balBefore + _margin) revert BadDeposit();
             tigAsset.burnFrom(address(this), tigAsset.balanceOf(address(this)));
@@ -665,14 +704,15 @@ contract Trading is MetaContext, ITrading {
      * @param _outputToken Output token address
      * @param _toMint Amount of tigAsset minted to be used for withdrawal
      */
-    function _handleWithdraw(IPosition.Trade memory _trade, address _stableVault, address _outputToken, uint _toMint) internal {
+    function _handleWithdraw(IPosition.Trade memory _trade, address _stableVault, address _outputToken, uint256 _toMint) internal {
         IStable(_trade.tigAsset).mintFor(address(this), _toMint);
         if (_outputToken == _trade.tigAsset) {
             IERC20(_outputToken).transfer(_trade.trader, _toMint);
         } else {
             uint256 _balBefore = IERC20(_outputToken).balanceOf(address(this));
             IStableVault(_stableVault).withdraw(_outputToken, _toMint);
-            if (IERC20(_outputToken).balanceOf(address(this)) != _balBefore + _toMint/(10**(18-ExtendedIERC20(_outputToken).decimals()))) revert BadWithdraw();
+            uint256 _decimals = ExtendedIERC20(_outputToken).decimals();
+            if (IERC20(_outputToken).balanceOf(address(this)) != _balBefore + _toMint/(10**(18-_decimals))) revert BadWithdraw();
             IERC20(_outputToken).transfer(_trade.trader, IERC20(_outputToken).balanceOf(address(this)) - _balBefore);
         }        
     }
@@ -687,14 +727,14 @@ contract Trading is MetaContext, ITrading {
      * @return _feePaid total fees paid during opening
      */
     function _handleOpenFees(
-        uint _asset,
-        uint _positionSize,
+        uint256 _asset,
+        uint256 _positionSize,
         address _trader,
         address _tigAsset,
         bool _isBot
     )
         internal
-        returns (uint _feePaid)
+        returns (uint256 _feePaid)
     {
         IPairsContract.Asset memory asset = pairsContract.idToAsset(_asset);
         Fees memory _fees = openFees;
@@ -730,10 +770,10 @@ contract Trading is MetaContext, ITrading {
             _fees.botFees = 0;
         }
         unchecked {
-            uint _daoFeesPaid = _positionSize * _fees.daoFees / DIVISION_CONSTANT;
+            uint256 _daoFeesPaid = _positionSize * _fees.daoFees / DIVISION_CONSTANT;
             _feePaid =
                 _positionSize
-                * (_fees.burnFees + _fees.botFees) // get total fee%
+                * (_fees.burnFees + _fees.botFees + (_referrer != address(0) ? _fees.referralFees : 0)) // get total fee%
                 / DIVISION_CONSTANT // divide by 100%
                 + _daoFeesPaid;
             emit FeesDistributed(
@@ -745,6 +785,10 @@ contract Trading is MetaContext, ITrading {
                 _referrer
             );
             IStable(_tigAsset).mintFor(address(this), _daoFeesPaid);
+        }
+        if (!marginApproved[_tigAsset]) {
+            IStable(_tigAsset).approve(address(gov), type(uint).max);
+            marginApproved[_tigAsset] = true;
         }
         gov.distribute(_tigAsset, IStable(_tigAsset).balanceOf(address(this)));
     }
@@ -760,26 +804,26 @@ contract Trading is MetaContext, ITrading {
      * @return payout_ payout to trader after fees
      */
     function _handleCloseFees(
-        uint _asset,
-        uint _payout,
+        uint256 _asset,
+        uint256 _payout,
         address _tigAsset,
-        uint _positionSize,
+        uint256 _positionSize,
         address _trader,
         bool _isBot
     )
         internal
-        returns (uint payout_)
+        returns (uint256 payout_)
     {
         IPairsContract.Asset memory asset = pairsContract.idToAsset(_asset);
         Fees memory _fees = closeFees;
-        uint _daoFeesPaid;
-        uint _burnFeesPaid;
-        uint _referralFeesPaid;
+        uint256 _daoFeesPaid;
+        uint256 _burnFeesPaid;
+        uint256 _referralFeesPaid;
         unchecked {
             _daoFeesPaid = (_positionSize*_fees.daoFees/DIVISION_CONSTANT)*asset.feeMultiplier/DIVISION_CONSTANT;
             _burnFeesPaid = (_positionSize*_fees.burnFees/DIVISION_CONSTANT)*asset.feeMultiplier/DIVISION_CONSTANT;
         }
-        uint _botFeesPaid;
+        uint256 _botFeesPaid;
         address _referrer = tradingExtension.getRef(_trader);//referrals.getReferral(referrals.getReferred(_trader));
         if (_referrer != address(0)) {
             unchecked {
@@ -789,7 +833,7 @@ contract Trading is MetaContext, ITrading {
                 _referrer,
                 _referralFeesPaid
             );
-             _daoFeesPaid = _daoFeesPaid-_referralFeesPaid*2;
+            _daoFeesPaid = _daoFeesPaid-_referralFeesPaid*2;
         }
         if (_isBot) {
             unchecked {
@@ -802,9 +846,8 @@ contract Trading is MetaContext, ITrading {
             _daoFeesPaid = _daoFeesPaid - _botFeesPaid;
         }
         emit FeesDistributed(_tigAsset, _daoFeesPaid, _burnFeesPaid, _referralFeesPaid, _botFeesPaid, _referrer);
-        payout_ = _payout - _daoFeesPaid - _burnFeesPaid - _botFeesPaid;
+        payout_ = _payout - (_daoFeesPaid + _referralFeesPaid) - _burnFeesPaid - _botFeesPaid;
         IStable(_tigAsset).mintFor(address(this), _daoFeesPaid);
-        IStable(_tigAsset).approve(address(gov), type(uint).max);
         gov.distribute(_tigAsset, _daoFeesPaid);
         return payout_;
     }
@@ -831,11 +874,11 @@ contract Trading is MetaContext, ITrading {
      * @param _direction long/short
      * @param _price market price
      */
-    function _checkSl(uint _sl, bool _direction, uint _price) internal pure {
+    function _checkSl(uint256 _sl, bool _direction, uint256 _price) internal pure {
         if (_direction) {
-            if (_sl > _price) revert("3"); //BadStopLoss
+            if (_sl > _price) revert BadStopLoss();
         } else {
-            if (_sl < _price && _sl != 0) revert("3"); //BadStopLoss
+            if (_sl < _price && _sl != 0) revert BadStopLoss();
         }
     }
 
@@ -844,8 +887,8 @@ contract Trading is MetaContext, ITrading {
      * @param _id position id
      * @param _trader trader address
      */
-    function _checkOwner(uint _id, address _trader) internal view {
-        if (position.ownerOf(_id) != _trader) revert("2"); //NotPositionOwner   
+    function _checkOwner(uint256 _id, address _trader) internal view {
+        if (position.ownerOf(_id) != _trader) revert NotOwner();
     }
 
     /**
@@ -854,15 +897,15 @@ contract Trading is MetaContext, ITrading {
      * @param _id position id
      * @param _type true for opening, false for closing
      */
-    function _checkDelay(uint _id, bool _type) internal {
+    function _checkDelay(uint256 _id, bool _type) internal {
         unchecked {
-            Delay memory _delay = blockDelayPassed[_id];
+            Delay memory _delay = timeDelayPassed[_id];
             if (_delay.actionType == _type) {
-                blockDelayPassed[_id].delay = block.number + blockDelay;
+                timeDelayPassed[_id].delay = block.timestamp + timeDelay;
             } else {
-                if (block.number < _delay.delay) revert("0"); //Wait
-                blockDelayPassed[_id].delay = block.number + blockDelay;
-                blockDelayPassed[_id].actionType = _type;
+                if (block.timestamp < _delay.delay) revert WaitDelay();
+                timeDelayPassed[_id].delay = block.timestamp + timeDelay;
+                timeDelayPassed[_id].actionType = _type;
             }
         }
     }
@@ -873,8 +916,8 @@ contract Trading is MetaContext, ITrading {
      * @param _token Margin asset token address
      */
     function _checkVault(address _stableVault, address _token) internal view {
-        require(allowedVault[_stableVault], "Unapproved stablevault");
-        require(_token == IStableVault(_stableVault).stable() || IStableVault(_stableVault).allowed(_token), "Token not approved in vault");
+        if (!allowedVault[_stableVault]) revert NotVault();
+        if (_token != IStableVault(_stableVault).stable() || !IStableVault(_stableVault).allowed(_token)) revert NotAllowedInVault();
     }
 
     /**
@@ -884,24 +927,23 @@ contract Trading is MetaContext, ITrading {
     function _validateProxy(address _trader) internal view {
         if (_trader != _msgSender()) {
             Proxy memory _proxy = proxyApprovals[_trader];
-            require(_proxy.proxy == _msgSender() && _proxy.time >= block.timestamp, "Proxy not approved");
+            if (_proxy.proxy != _msgSender() || _proxy.time >= block.timestamp) revert NotProxy();
         }
     }
 
     // ===== GOVERNANCE-ONLY =====
 
     /**
-     * @dev Sets block delay between opening and closing
-     * @notice In blocks not seconds
-     * @param _blockDelay delay amount
+     * @dev Sets timestamp delay between opening and closing
+     * @param _timeDelay delay amount
      */
-    function setBlockDelay(
-        uint _blockDelay
+    function setTimeDelay(
+        uint256 _timeDelay
     )
         external
         onlyOwner
     {
-        blockDelay = _blockDelay;
+        timeDelay = _timeDelay;
     }
 
     /**
@@ -920,15 +962,16 @@ contract Trading is MetaContext, ITrading {
     }
 
     /**
-     * @dev Sets max payout % compared to margin
+     * @dev Sets max payout % compared to margin, minimum +500% PnL
      * @param _maxWinPercent payout %
      */
     function setMaxWinPercent(
-        uint _maxWinPercent
+        uint256 _maxWinPercent
     )
         external
         onlyOwner
     {
+        if (_maxWinPercent != 0 && _maxWinPercent < 6*DIVISION_CONSTANT) revert BadSetter();
         maxWinPercent = _maxWinPercent;
     }
 
@@ -936,7 +979,7 @@ contract Trading is MetaContext, ITrading {
      * @dev Sets executable price range for limit orders
      * @param _range price range in %
      */
-    function setLimitOrderPriceRange(uint _range) external onlyOwner {
+    function setLimitOrderPriceRange(uint256 _range) external onlyOwner {
         limitOrderPriceRange = _range;
     }
 
@@ -949,9 +992,9 @@ contract Trading is MetaContext, ITrading {
      * @param _botFees Fees given to bots that execute limit orders
      * @param _percent Percent of earned funding fees going to StableVault
      */
-    function setFees(bool _open, uint _daoFees, uint _burnFees, uint _referralFees, uint _botFees, uint _percent) external onlyOwner {
+    function setFees(bool _open, uint256 _daoFees, uint256 _burnFees, uint256 _referralFees, uint256 _botFees, uint256 _percent) external onlyOwner {
         unchecked {
-            require(_daoFees >= _botFees+_referralFees*2);
+            if (_daoFees < _botFees+_referralFees*2) revert BadSetter();
             if (_open) {
                 openFees.daoFees = _daoFees;
                 openFees.burnFees = _burnFees;
@@ -963,7 +1006,7 @@ contract Trading is MetaContext, ITrading {
                 closeFees.referralFees = _referralFees;
                 closeFees.botFees = _botFees;                
             }
-            require(_percent <= DIVISION_CONSTANT);
+            if (_percent > DIVISION_CONSTANT) revert BadSetter();
             vaultFundingPercent = _percent;
         }
     }
@@ -982,72 +1025,72 @@ contract Trading is MetaContext, ITrading {
 
     event PositionOpened(
         TradeInfo _tradeInfo,
-        uint _orderType,
-        uint _price,
-        uint _id,
+        uint256 _orderType,
+        uint256 _price,
+        uint256 _id,
         address _trader,
-        uint _marginAfterFees
+        uint256 _marginAfterFees
     );
 
     event PositionClosed(
-        uint _id,
-        uint _closePrice,
-        uint _percent,
-        uint _payout,
+        uint256 _id,
+        uint256 _closePrice,
+        uint256 _percent,
+        uint256 _payout,
         address _trader,
         address _executor
     );
 
     event PositionLiquidated(
-        uint _id,
+        uint256 _id,
         address _trader,
         address _executor
     );
 
     event LimitOrderExecuted(
-        uint _asset,
+        uint256 _asset,
         bool _direction,
-        uint _openPrice,
-        uint _lev,
-        uint _margin,
-        uint _id,
+        uint256 _openPrice,
+        uint256 _lev,
+        uint256 _margin,
+        uint256 _id,
         address _trader,
         address _executor
     );
 
     event UpdateTPSL(
-        uint _id,
+        uint256 _id,
         bool _isTp,
-        uint _price,
+        uint256 _price,
         address _trader
     );
 
     event LimitCancelled(
-        uint _id,
+        uint256 _id,
         address _trader
     );
 
     event MarginModified(
-        uint _id,
-        uint _newMargin,
-        uint _newLeverage,
+        uint256 _id,
+        uint256 _newMargin,
+        uint256 _newLeverage,
         bool _isMarginAdded,
         address _trader
     );
 
     event AddToPosition(
-        uint _id,
-        uint _newMargin,
-        uint _newPrice,
+        uint256 _id,
+        uint256 _newMargin,
+        uint256 _newPrice,
         address _trader
     );
 
     event FeesDistributed(
         address _tigAsset,
-        uint _daoFees,
-        uint _burnFees,
-        uint _refFees,
-        uint _botFees,
+        uint256 _daoFees,
+        uint256 _burnFees,
+        uint256 _refFees,
+        uint256 _botFees,
         address _referrer
     );
 }

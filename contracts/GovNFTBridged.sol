@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -19,6 +19,7 @@ contract GovNFTBridged is ERC721Enumerable, ILayerZeroReceiver, MetaContext, IGo
 
     mapping(uint16 => mapping(address => bool)) public isTrustedAddress;
     mapping(uint16 => mapping(bytes => mapping(uint64 => bytes32))) public failedMessages;
+    mapping(uint16 => mapping(bytes => mapping(uint64 => bool))) public consumedMessage;
     event MessageFailed(uint16 _srcChainId, bytes _srcAddress, uint64 _nonce, bytes _payload, bytes _reason);
     event RetryMessageSuccess(uint16 _srcChainId, bytes _srcAddress, uint64 _nonce, bytes32 _payloadHash);
     event ReceiveNFT(
@@ -45,10 +46,10 @@ contract GovNFTBridged is ERC721Enumerable, ILayerZeroReceiver, MetaContext, IGo
         baseURI = _newBaseURI;
     }
 
-    function _bridgeMint(address to, uint256 tokenId) public {
+    function bridgeMint(address to, uint256 tokenId) public {
         require(msg.sender == address(this) || _msgSender() == owner(), "NotBridge");
         require(tokenId <= 10000 && tokenId != 0, "BadID");
-        for (uint i=0; i<assetsLength(); i++) {
+        for (uint256 i=0; i<assetsLength(); i++) {
             userPaid[to][assets[i]] += accRewardsPerNFT[assets[i]];
         }
         super._mint(to, tokenId);
@@ -56,7 +57,7 @@ contract GovNFTBridged is ERC721Enumerable, ILayerZeroReceiver, MetaContext, IGo
 
     function _burn(uint256 tokenId) internal override {
         address owner = ownerOf(tokenId);
-        for (uint i=0; i<assetsLength(); i++) {
+        for (uint256 i=0; i<assetsLength(); i++) {
             userDebt[owner][assets[i]] += accRewardsPerNFT[assets[i]];
             userDebt[owner][assets[i]] -= userPaid[owner][assets[i]]/balanceOf(owner);
             userPaid[owner][assets[i]] -= userPaid[owner][assets[i]]/balanceOf(owner);            
@@ -70,7 +71,7 @@ contract GovNFTBridged is ERC721Enumerable, ILayerZeroReceiver, MetaContext, IGo
         uint256 tokenId
     ) internal override {
         require(ownerOf(tokenId) == from, "!Owner");
-        for (uint i=0; i<assetsLength(); i++) {
+        for (uint256 i=0; i<assetsLength(); i++) {
             userDebt[from][assets[i]] += accRewardsPerNFT[assets[i]];
             userDebt[from][assets[i]] -= userPaid[from][assets[i]]/balanceOf(from);
             userPaid[from][assets[i]] -= userPaid[from][assets[i]]/balanceOf(from);
@@ -90,7 +91,8 @@ contract GovNFTBridged is ERC721Enumerable, ILayerZeroReceiver, MetaContext, IGo
         uint256[] memory tokenId
     ) public payable {
         require(tokenId.length > 0, "Not bridging");
-        for (uint i=0; i<tokenId.length; i++) {
+        require(tokenId.length <= maxBridge, "Over max bridge");
+        for (uint256 i=0; i<tokenId.length; i++) {
             require(_msgSender() == ownerOf(tokenId[i]), "Not the owner");
             // burn NFT
             _burn(tokenId[i]);
@@ -125,6 +127,7 @@ contract GovNFTBridged is ERC721Enumerable, ILayerZeroReceiver, MetaContext, IGo
             adapterParams
         );
     }
+
     function lzReceive(
         uint16 _srcChainId,
         bytes memory _srcAddress,
@@ -132,6 +135,8 @@ contract GovNFTBridged is ERC721Enumerable, ILayerZeroReceiver, MetaContext, IGo
         bytes memory _payload
     ) external override {
         require(_msgSender() == address(endpoint), "!Endpoint");
+        if (consumedMessage[_srcChainId][_srcAddress][_nonce]) return;
+        consumedMessage[_srcChainId][_srcAddress][_nonce] = true;
         (bool success, bytes memory reason) = address(this).excessivelySafeCall(gasleft()*4/5, 150, abi.encodeWithSelector(this.nonblockingLzReceive.selector, _srcChainId, _srcAddress, _nonce, _payload));
         // try-catch all errors/exceptions
         if (!success) {
@@ -157,8 +162,8 @@ contract GovNFTBridged is ERC721Enumerable, ILayerZeroReceiver, MetaContext, IGo
             (address, uint256[])
         );
         // mint the tokens
-        for (uint i=0; i<tokenId.length; i++) {
-            _bridgeMint(toAddress, tokenId[i]);
+        for (uint256 i=0; i<tokenId.length; i++) {
+            bridgeMint(toAddress, tokenId[i]);
         }
         emit ReceiveNFT(_srcChainId, toAddress, tokenId);
     }
@@ -193,7 +198,7 @@ contract GovNFTBridged is ERC721Enumerable, ILayerZeroReceiver, MetaContext, IGo
             );
     }
 
-    function setGas(uint _gas) external onlyOwner {
+    function setGas(uint256 _gas) external onlyOwner {
         gas = _gas;
     }
 
@@ -202,20 +207,24 @@ contract GovNFTBridged is ERC721Enumerable, ILayerZeroReceiver, MetaContext, IGo
         endpoint = _endpoint;
     }
 
-    function safeTransferMany(address _to, uint[] calldata _ids) external {
-        for (uint i=0; i<_ids.length; i++) {
+    function _safeTransfer(address from, address to, uint256 tokenId, bytes memory data) internal override {
+        _transfer(from, to, tokenId);
+    }
+
+    function transferMany(address _to, uint[] calldata _ids) external {
+        for (uint256 i=0; i<_ids.length; i++) {
             _transfer(_msgSender(), _to, _ids[i]);
         }
     }
 
-    function safeTransferFromMany(address _from, address _to, uint[] calldata _ids) external {
-        for (uint i=0; i<_ids.length; i++) {
-            safeTransferFrom(_from, _to, _ids[i]);
+    function transferFromMany(address _from, address _to, uint[] calldata _ids) external {
+        for (uint256 i=0; i<_ids.length; i++) {
+            transferFrom(_from, _to, _ids[i]);
         }
     }
 
     function approveMany(address _to, uint[] calldata _ids) external {
-        for (uint i=0; i<_ids.length; i++) {
+        for (uint256 i=0; i<_ids.length; i++) {
             approve(_to, _ids[i]);
         }
     }
@@ -235,7 +244,7 @@ contract GovNFTBridged is ERC721Enumerable, ILayerZeroReceiver, MetaContext, IGo
         IERC20(_tigAsset).transfer(_msgsender, amount);
     }
 
-    function distribute(address _tigAsset, uint _amount) external {
+    function distribute(address _tigAsset, uint256 _amount) external {
         if (assets.length == 0 || assets[assetsIndex[_tigAsset]] == address(0) || totalSupply() == 0 || !_allowedAsset[_tigAsset]) return;
         try IERC20(_tigAsset).transferFrom(_msgSender(), address(this), _amount) {
             accRewardsPerNFT[_tigAsset] += _amount/totalSupply();
@@ -273,7 +282,7 @@ contract GovNFTBridged is ERC721Enumerable, ILayerZeroReceiver, MetaContext, IGo
 
     function balanceIds(address _user) external view returns (uint[] memory) {
         uint[] memory _ids = new uint[](balanceOf(_user));
-        for (uint i=0; i<_ids.length; i++) {
+        for (uint256 i=0; i<_ids.length; i++) {
             _ids[i] = tokenOfOwnerByIndex(_user, i);
         }
         return _ids;

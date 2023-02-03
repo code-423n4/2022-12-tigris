@@ -1,5 +1,5 @@
-//SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IPairsContract.sol";
@@ -8,7 +8,7 @@ import "./interfaces/IReferrals.sol";
 import "./interfaces/IPosition.sol";
 
 contract TradingExtension is Ownable{
-    uint constant private DIVISION_CONSTANT = 1e10; // 100%
+    uint256 constant private DIVISION_CONSTANT = 1e10; // 100%
 
     address public trading;
     uint256 public validSignatureTimer;
@@ -23,7 +23,9 @@ contract TradingExtension is Ownable{
     IReferrals private referrals;
     IPosition private position;
 
-    uint public maxGasPrice = 1000000000000; // 1000 gwei
+    uint256 public maxGasPrice = 1000 gwei;
+
+    error BadConstructor();
 
     constructor(
         address _trading,
@@ -32,6 +34,11 @@ contract TradingExtension is Ownable{
         address _position
     )
     {
+        if (_trading == address(0)
+            || _pairsContract == address(0)
+            || _ref == address(0)
+            || _position == address(0)
+        ) revert BadConstructor();
         trading = _trading;
         pairsContract = IPairsContract(_pairsContract);
         referrals = IReferrals(_ref);
@@ -59,9 +66,9 @@ contract TradingExtension is Ownable{
     * @return _payout amount of payout to the trader after closing
     */
     function _closePosition(
-        uint _id,
-        uint _price,
-        uint _percent
+        uint256 _id,
+        uint256 _price,
+        uint256 _percent
     ) external onlyProtocol returns (IPosition.Trade memory _trade, uint256 _positionSize, int256 _payout) {
         _trade = position.trades(_id);
         (_positionSize, _payout) = TradingLibrary.pnl(_trade.direction, _price, _trade.price, _trade.margin, _trade.leverage, _trade.accInterest);
@@ -86,11 +93,11 @@ contract TradingExtension is Ownable{
     * @return _tigAsset address of the position collateral asset
     */
     function _limitClose(
-        uint _id,
+        uint256 _id,
         bool _tp,
         PriceData calldata _priceData,
         bytes calldata _signature
-    ) external view returns(uint _limitPrice, address _tigAsset) {
+    ) external view returns(uint256 _limitPrice, address _tigAsset) {
         _checkGas();
         IPosition.Trade memory _trade = position.trades(_id);
         _tigAsset = _trade.tigAsset;
@@ -124,24 +131,24 @@ contract TradingExtension is Ownable{
     }
 
     function modifyShortOi(
-        uint _asset,
+        uint256 _asset,
         address _tigAsset,
         bool _onOpen,
-        uint _size
+        uint256 _size
     ) public onlyProtocol {
         pairsContract.modifyShortOi(_asset, _tigAsset, _onOpen, _size);
     }
 
     function modifyLongOi(
-        uint _asset,
+        uint256 _asset,
         address _tigAsset,
         bool _onOpen,
-        uint _size
+        uint256 _size
     ) public onlyProtocol {
         pairsContract.modifyLongOi(_asset, _tigAsset, _onOpen, _size);
     }
 
-    function setMaxGasPrice(uint _maxGasPrice) external onlyOwner {
+    function setMaxGasPrice(uint256 _maxGasPrice) external onlyOwner {
         maxGasPrice = _maxGasPrice;
     }
 
@@ -161,10 +168,10 @@ contract TradingExtension is Ownable{
     * @return _spread spread after verification
     */
     function getVerifiedPrice(
-        uint _asset,
+        uint256 _asset,
         PriceData calldata _priceData,
         bytes calldata _signature,
-        uint _withSpreadIsLong
+        uint256 _withSpreadIsLong
     ) 
         public view
         returns(uint256 _price, uint256 _spread) 
@@ -191,13 +198,11 @@ contract TradingExtension is Ownable{
         bytes32 _referral,
         address _trader
     ) external onlyProtocol {
-        
-        if (_referral != bytes32(0)) {
-            if (referrals.getReferral(_referral) != address(0)) {
-                if (referrals.getReferred(_trader) == bytes32(0)) {
-                    referrals.setReferred(_trader, _referral);
-                }
-            }
+        if (_referral != bytes32(0)
+            && referrals.getReferred(_trader) == bytes32(0)
+            && referrals.getReferral(_referral) != address(0)
+        ) {
+            referrals.setReferred(_trader, _referral);
         }
     }
 
@@ -208,7 +213,7 @@ contract TradingExtension is Ownable{
      * @param _margin margin
      * @param _leverage leverage
      */
-    function validateTrade(uint _asset, address _tigAsset, uint _margin, uint _leverage) external view {
+    function validateTrade(uint256 _asset, address _tigAsset, uint256 _margin, uint256 _leverage) external view {
         unchecked {
             IPairsContract.Asset memory asset = pairsContract.idToAsset(_asset);
             if (!allowedMargin[_tigAsset]) revert("!margin");
@@ -220,40 +225,40 @@ contract TradingExtension is Ownable{
     }
 
     function setValidSignatureTimer(
-        uint _validSignatureTimer
+        uint256 _time
     )
         external
         onlyOwner
     {
-        validSignatureTimer = _validSignatureTimer;
+        validSignatureTimer = _time;
     }
 
-    function setChainlinkEnabled(bool _bool) external onlyOwner {
-        chainlinkEnabled = _bool;
+    function setChainlinkEnabled(bool _isEnabled) external onlyOwner {
+        chainlinkEnabled = _isEnabled;
     }
 
     /**
      * @dev whitelists a node
      * @param _node node address
-     * @param _bool bool
+     * @param _isNode if address is set as a node
      */
-    function setNode(address _node, bool _bool) external onlyOwner {
-        isNode[_node] = _bool;
+    function setNode(address _node, bool _isNode) external onlyOwner {
+        isNode[_node] = _isNode;
     }
 
     /**
      * @dev Allows a tigAsset to be used
      * @param _tigAsset tigAsset
-     * @param _bool bool
+     * @param _isAllowed if token is allowed to be used as margin
      */
     function setAllowedMargin(
         address _tigAsset,
-        bool _bool
+        bool _isAllowed
     ) 
         external
         onlyOwner
     {
-        allowedMargin[_tigAsset] = _bool;
+        allowedMargin[_tigAsset] = _isAllowed;
     }
 
     /**
@@ -263,7 +268,7 @@ contract TradingExtension is Ownable{
      */
     function setMinPositionSize(
         address _tigAsset,
-        uint _min
+        uint256 _min
     ) 
         external
         onlyOwner
@@ -279,4 +284,9 @@ contract TradingExtension is Ownable{
         require(msg.sender == trading, "!protocol");
         _;
     }
+
+    event SetAllowedMargin(address _token, bool _isAllowed);
+    event SetNode(address _node, bool _isNode);
+    event SetChainlinkEnabled(bool _isEnabled);
+    event SetValidSignatureTimer(uint256 _time);
 }

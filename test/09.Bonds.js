@@ -48,7 +48,7 @@ describe("Bonds", function () {
     await stabletoken.connect(owner).approve(Lock.address, ethers.utils.parseEther("100000000000"));
     await stabletoken.connect(owner).approve(Bond.address, ethers.utils.parseEther("100000000000"));
     await stabletoken.connect(owner).approve(GovNFT.address, ethers.utils.parseEther("100000000000"));
-    await govnft.connect(owner).safeTransferMany(Lock.address, [1]);
+    await govnft.connect(owner).transferMany(Lock.address, [1]);
     await lock.editAsset(StableToken.address, true);
     await bond.addAsset(StableToken.address);
   });
@@ -65,6 +65,9 @@ describe("Bonds", function () {
     });
     it("Non-owner editing asset in lock should revert", async function () {
       await expect(lock.connect(user).editAsset(stabletoken.address, false)).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+    it("Non-owner rescuing tokens in lock should revert", async function () {
+      await expect(lock.connect(user).rescue(stabletoken.address)).to.be.revertedWith("Ownable: caller is not the owner");
     });
   });
   describe("Manager permissions", function () {
@@ -211,8 +214,8 @@ describe("Bonds", function () {
       await network.provider.send("evm_increaseTime", [300]);
       await network.provider.send("evm_mine");
 
-      await bond.connect(owner).safeTransferMany(user.address, [1]);
-      await bond.connect(user).safeTransferMany(owner.address, [2]);
+      await bond.connect(owner).transferMany(user.address, [1]);
+      await bond.connect(user).transferMany(owner.address, [2]);
       expect(await bond.pending(1)).to.be.equals("0");
       expect(await bond.pending(2)).to.be.equals("0");
       expect(await bond.userDebt(owner.address, stabletoken.address)).to.be.equals("916317991631799162000");// 916.3 tigUSD
@@ -242,7 +245,12 @@ describe("Bonds", function () {
       expect(await bond.pending(1)).to.be.equals("909090909090909090684");
       expect(await bond.pending(2)).to.be.equals("0");
 
+      expect(await stabletoken.balanceOf(user.address)).to.be.equals(ethers.utils.parseEther("0"));
+      await lock.connect(user).claim(2);
+      expect(await bond.pending(2)).to.be.equals("0");
+      expect(await stabletoken.balanceOf(user.address)).to.be.equals(ethers.utils.parseEther("0"));
       await lock.connect(user).release(2);
+      expect(await stabletoken.balanceOf(user.address)).to.be.equals(ethers.utils.parseEther("1000"));
       expect(await bond.pending(1)).to.be.equals("999999999999999999725"); // Negligable difference from 1000e18 due to solidity division
     });
   });
@@ -318,8 +326,18 @@ describe("Bonds", function () {
     it("Extending the lock can only be max 365 days", async function () {
       await stabletoken.connect(owner).mintFor(user.address, ethers.utils.parseEther("100"));
       await lock.connect(user).lock(StableToken.address, ethers.utils.parseEther("100"), 365);
-      await bond.connect(owner).setManager(owner.address);
-      await expect(bond.connect(owner).extendLock(1, StableToken.address, 0, 1, user.address)).to.be.revertedWith("MAX PERIOD");
+      await network.provider.send("evm_increaseTime", [432000]); // Skip 5 days
+      await network.provider.send("evm_mine");
+      // Extend 6 days
+      await expect(lock.connect(user).extendLock(1, 0, 6)).to.be.revertedWith("MAX PERIOD");
+    });
+    it("Extending the lock can only be min 7 days", async function () {
+      await stabletoken.connect(owner).mintFor(user.address, ethers.utils.parseEther("100"));
+      await lock.connect(user).lock(StableToken.address, ethers.utils.parseEther("100"), 7);
+      await network.provider.send("evm_increaseTime", [259200]); // Skip 3 days
+      await network.provider.send("evm_mine");
+      // Extend 2 days
+      await expect(lock.connect(user).extendLock(1, 0, 2)).to.be.revertedWith("MIN PERIOD");
     });
     it("Only non-expired bond can be extended", async function () {
       await stabletoken.connect(owner).mintFor(user.address, ethers.utils.parseEther("100"));
@@ -360,30 +378,29 @@ describe("Bonds", function () {
       await network.provider.send("evm_mine");
       await expect(bond.connect(owner).extendLock(1, StableToken.address, 0, 0, user.address)).to.be.revertedWith("Bad epoch");
     });
-    it("Resetting lock should reset the lock period and keep locked amount correctly", async function () {
+    it("Extending lock should calculate lock period and shares correctly (both inputs 0)", async function () {
       await stabletoken.connect(owner).mintFor(user.address, ethers.utils.parseEther("100"));
-      await lock.connect(user).lock(StableToken.address, ethers.utils.parseEther("100"), 10);
+      await lock.connect(user).lock(StableToken.address, ethers.utils.parseEther("100"), 20);
 
-      await network.provider.send("evm_increaseTime", [432000]); // Skip 5 days
+      await network.provider.send("evm_increaseTime", [864000]); // Skip 10 days
       await network.provider.send("evm_mine");
 
       [id, _owner, asset, amount, mintEpoch, mintTime, expireEpoch, pending, shares, period, expired] = await bond.idToBond(1);
-      let totalShares = await bond.totalShares(stabletoken.address);
       expect(id).to.be.equals(1);
       expect(_owner).to.be.equals(user.address);
       expect(asset).to.be.equals(StableToken.address);
       expect(amount).to.be.equals(ethers.utils.parseEther("100"));
-      expect(mintEpoch).to.be.equals(await getAEpoch()-5);
-      expect(expireEpoch).to.be.equals(await getAEpoch()+5);
+      expect(mintEpoch).to.be.equals(await getAEpoch()-10);
+      expect(expireEpoch).to.be.equals(await getAEpoch()+10);
       expect(pending).to.be.equals(0);
-      expect(shares).to.be.equals("2739726027397260273");
-      expect(period).to.be.equals(10);
+      expect(shares).to.be.equals("5479452054794520547");
+      expect(period).to.be.equals(20);
       expect(expired).to.be.equals(false);
 
       await lock.connect(user).extendLock(1, 0, 0);
 
       [id, _owner, asset, amount, mintEpoch, mintTime, expireEpoch, pending, shares, period, expired] = await bond.idToBond(1);
-      expect(await bond.totalShares(stabletoken.address)).to.be.equals(totalShares);
+      expect(await bond.totalShares(stabletoken.address)).to.be.equals(shares);
       expect(id).to.be.equals(1);
       expect(_owner).to.be.equals(user.address);
       expect(asset).to.be.equals(StableToken.address);
@@ -395,60 +412,24 @@ describe("Bonds", function () {
       expect(period).to.be.equals(10);
       expect(expired).to.be.equals(false);
     });
-    it("Adding amount to lock should reset the lock period and calculate shares correctly", async function () {
+    it("Adding amount and time to lock should calculate lock period and shares correctly", async function () {
       await stabletoken.connect(owner).mintFor(user.address, ethers.utils.parseEther("100"));
-      await lock.connect(user).lock(StableToken.address, ethers.utils.parseEther("100"), 10);
+      await lock.connect(user).lock(StableToken.address, ethers.utils.parseEther("100"), 20);
 
-      await network.provider.send("evm_increaseTime", [432000]); // Skip 5 days
+      await network.provider.send("evm_increaseTime", [864000]); // Skip 10 days
       await network.provider.send("evm_mine");
-
-      [id, _owner, asset, amount, mintEpoch, mintTime, expireEpoch, pending, shares, period, expired] = await bond.idToBond(1);
-      expect(await bond.totalShares(stabletoken.address)).to.be.equals("2739726027397260273");
-      expect(id).to.be.equals(1);
-      expect(_owner).to.be.equals(user.address);
-      expect(asset).to.be.equals(StableToken.address);
-      expect(amount).to.be.equals(ethers.utils.parseEther("100"));
-      expect(mintEpoch).to.be.equals(await getAEpoch()-5);
-      expect(expireEpoch).to.be.equals(await getAEpoch()+5);
-      expect(pending).to.be.equals(0);
-      expect(shares).to.be.equals("2739726027397260273");
-      expect(period).to.be.equals(10);
-      expect(expired).to.be.equals(false);
-
-      await stabletoken.connect(owner).mintFor(user.address, ethers.utils.parseEther("100"));
-      await lock.connect(user).extendLock(1, ethers.utils.parseEther("100"), 0);
 
       [id, _owner, asset, amount, mintEpoch, mintTime, expireEpoch, pending, shares, period, expired] = await bond.idToBond(1);
       expect(await bond.totalShares(stabletoken.address)).to.be.equals("5479452054794520547");
       expect(id).to.be.equals(1);
       expect(_owner).to.be.equals(user.address);
       expect(asset).to.be.equals(StableToken.address);
-      expect(amount).to.be.equals(ethers.utils.parseEther("200"));
-      expect(mintEpoch).to.be.equals(await getAEpoch());
+      expect(amount).to.be.equals(ethers.utils.parseEther("100"));
+      expect(mintEpoch).to.be.equals(await getAEpoch()-10);
       expect(expireEpoch).to.be.equals(await getAEpoch()+10);
       expect(pending).to.be.equals(0);
       expect(shares).to.be.equals("5479452054794520547");
-      expect(period).to.be.equals(10);
-      expect(expired).to.be.equals(false);
-    });
-    it("Adding amount and time to lock should reset the lock period and calculate shares correctly", async function () {
-      await stabletoken.connect(owner).mintFor(user.address, ethers.utils.parseEther("100"));
-      await lock.connect(user).lock(StableToken.address, ethers.utils.parseEther("100"), 10);
-
-      await network.provider.send("evm_increaseTime", [432000]); // Skip 5 days
-      await network.provider.send("evm_mine");
-
-      [id, _owner, asset, amount, mintEpoch, mintTime, expireEpoch, pending, shares, period, expired] = await bond.idToBond(1);
-      expect(await bond.totalShares(stabletoken.address)).to.be.equals("2739726027397260273");
-      expect(id).to.be.equals(1);
-      expect(_owner).to.be.equals(user.address);
-      expect(asset).to.be.equals(StableToken.address);
-      expect(amount).to.be.equals(ethers.utils.parseEther("100"));
-      expect(mintEpoch).to.be.equals(await getAEpoch()-5);
-      expect(expireEpoch).to.be.equals(await getAEpoch()+5);
-      expect(pending).to.be.equals(0);
-      expect(shares).to.be.equals("2739726027397260273");
-      expect(period).to.be.equals(10);
+      expect(period).to.be.equals(20);
       expect(expired).to.be.equals(false);
 
       await stabletoken.connect(owner).mintFor(user.address, ethers.utils.parseEther("100"));
@@ -461,23 +442,31 @@ describe("Bonds", function () {
       expect(asset).to.be.equals(StableToken.address);
       expect(amount).to.be.equals(ethers.utils.parseEther("200"));
       expect(mintEpoch).to.be.equals(await getAEpoch());
-      expect(expireEpoch).to.be.equals(await getAEpoch()+20); // 10 days added
+      expect(expireEpoch).to.be.equals(await getAEpoch()+20);
       expect(pending).to.be.equals(0);
-      expect(shares).to.be.equals("10958904109589041095"); // Shares doubled with time increase
-      expect(period).to.be.equals(20); // New time
+      expect(shares).to.be.equals("10958904109589041095");
+      expect(period).to.be.equals(20);
       expect(expired).to.be.equals(false);
     });
-  });
-  describe("Bond transfers", function () {
-    it("Bond can only transferred if epoch is updated", async function () {
-      await stabletoken.connect(owner).mintFor(owner.address, ethers.utils.parseEther("3000"));
-      await lock.connect(owner).lock(StableToken.address, ethers.utils.parseEther("3000"), 365);
+    it("Releasing a lock after extending", async function () {
+      await stabletoken.connect(owner).mintFor(user.address, ethers.utils.parseEther("110"));
+      // Lock 100 for 9 days
+      await lock.connect(user).lock(StableToken.address, ethers.utils.parseEther("100"), 9);
 
-      await network.provider.send("evm_increaseTime", [864000]);
+      // Lock another 10
+      await lock.connect(user).extendLock(1, ethers.utils.parseEther("10"), 0);
+
+      await network.provider.send("evm_increaseTime", [864000]); // Skip 10 days
       await network.provider.send("evm_mine");
 
-      await expect(bond.connect(owner).safeTransferMany(user.address, [1])).to.be.revertedWith("Bad epoch");
-    });
+      // Try to release 110 after bond has expired -> Underflow
+      expect(await lock.totalLocked(stabletoken.address)).to.be.equals(ethers.utils.parseEther("110"));
+      await lock.connect(user).release(1);
+      expect(await stabletoken.balanceOf(user.address)).to.be.equals(ethers.utils.parseEther("110"));
+      expect(await lock.totalLocked(stabletoken.address)).to.be.equals(0);
+  });
+  });
+  describe("Bond transfers", function () {
     it("Expired bond cannot be transferred", async function () {
       await stabletoken.connect(owner).mintFor(owner.address, ethers.utils.parseEther("3000"));
       await lock.connect(owner).lock(StableToken.address, ethers.utils.parseEther("3000"), 10);
@@ -486,12 +475,12 @@ describe("Bonds", function () {
       await network.provider.send("evm_mine");
 
       await lock.connect(owner).claimGovFees();
-      await expect(bond.connect(owner).safeTransferMany(user.address, [1])).to.be.revertedWith("Expired!");
+      await expect(bond.connect(owner).transferMany(user.address, [1])).to.be.revertedWith("Transfer after expiration");
     });
     it("Bond can only be transferred 5 minutes after an update", async function () {
       await stabletoken.connect(owner).mintFor(owner.address, ethers.utils.parseEther("3000"));
       await lock.connect(owner).lock(StableToken.address, ethers.utils.parseEther("3000"), 10);
-      await expect(bond.connect(owner).safeTransferMany(user.address, [1])).to.be.revertedWith("Recent update");
+      await expect(bond.connect(owner).transferMany(user.address, [1])).to.be.revertedWith("Recent update");
     });
     it("TransferFromMany should work as expected", async function () {
       await stabletoken.connect(owner).mintFor(owner.address, ethers.utils.parseEther("9000"));
@@ -508,7 +497,7 @@ describe("Bonds", function () {
       expect(await bond.balanceOf(owner.address)).to.be.equals(3);
       expect(await bond.balanceOf(user.address)).to.be.equals(0);
       await bond.connect(owner).approveMany(user.address, [1,2,3]);
-      await bond.connect(user).safeTransferFromMany(owner.address, user.address, [1,2,3]);
+      await bond.connect(user).transferFromMany(owner.address, user.address, [1,2,3]);
       expect(await bond.balanceOf(owner.address)).to.be.equals(0);
       expect(await bond.balanceOf(user.address)).to.be.equals(3);
     });
@@ -541,6 +530,33 @@ describe("Bonds", function () {
       await lock.connect(user).lock(StableToken.address, ethers.utils.parseEther("1000"), 100);
       expect(await bond.tokenURI(1)).to.equal("ipfs://abc.xyz/1");
       expect(await bond.tokenURI(2)).to.equal("ipfs://abc.xyz/2");
+    });
+  });
+  describe("Recovering NFTs", function () {
+    it("Non-owner recovering NFTs should revert", async function () {
+      await expect(lock.connect(user).sendNFTs([1])).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+    it("Owner should be able to recover NFTs", async function () {
+      expect(await govnft.balanceOf(owner.address)).to.be.equals(0);
+      expect(await govnft.balanceOf(lock.address)).to.be.equals(1);
+      await lock.connect(owner).sendNFTs([1]);
+      expect(await govnft.balanceOf(owner.address)).to.be.equals(1);
+      expect(await govnft.balanceOf(lock.address)).to.be.equals(0);
+    });
+  });
+  describe("Rescuing stuck tokens", function () {
+    it("Owner rescuing stuck tokens from Lock.sol should send the correct amount of tokens", async function () {
+      await stabletoken.connect(owner).mintFor(user.address, ethers.utils.parseEther("100"));
+      await lock.connect(user).lock(StableToken.address, ethers.utils.parseEther("100"), 10);
+      await bond.connect(owner).setAllowedAsset(StableToken.address, false);
+      await stabletoken.connect(owner).mintFor(owner.address, ethers.utils.parseEther("1000"));
+      await govnft.connect(owner).distribute(stabletoken.address, ethers.utils.parseEther("1000"));
+      await lock.connect(owner).claimGovFees();
+      expect(await lock.totalLocked(StableToken.address)).to.be.equals(ethers.utils.parseEther("100"));
+      expect(await stabletoken.balanceOf(Lock.address)).to.be.equals(ethers.utils.parseEther("1100"));
+      await lock.connect(owner).rescue(StableToken.address);
+      expect(await stabletoken.balanceOf(owner.address)).to.be.equals(ethers.utils.parseEther("1000"));
+      expect(await stabletoken.balanceOf(Lock.address)).to.be.equals(ethers.utils.parseEther("100"));
     });
   });
 });

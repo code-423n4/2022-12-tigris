@@ -1,5 +1,5 @@
-//SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IPairsContract.sol";
@@ -41,9 +41,10 @@ contract PairsContract is Ownable, IPairsContract {
      * @param _asset index of the requested asset
      * @param _name name of the asset
      * @param _chainlinkFeed optional address of the respective Chainlink price feed
-     * @param _maxLeverage maximimum allowed leverage
-     * @param _maxLeverage minimum allowed leverage
+     * @param _minLeverage minimum allowed leverage
+     * @param _maxLeverage maximum allowed leverage
      * @param _feeMultiplier percent value that the opening/closing fee is multiplied by in BP
+     * @param _baseFundingRate Funding rate applied to pair when open interest is completely unbalanced
      */
     function addAsset(uint256 _asset, string memory _name, address _chainlinkFeed, uint256 _minLeverage, uint256 _maxLeverage, uint256 _feeMultiplier, uint256 _baseFundingRate) external onlyOwner {
         bytes memory _assetName  = bytes(_idToAsset[_asset].name);
@@ -148,7 +149,7 @@ contract PairsContract is Ownable, IPairsContract {
      * @dev edits the current open interest for long
      * @param _asset index of the asset
      * @param _tigAsset contract address of the tigAsset
-     * @param _onOpen true if adding to open interesr
+     * @param _onOpen true if adding to open interest
      * @param _amount amount to be added/removed from open interest
      */
     function modifyLongOi(uint256 _asset, address _tigAsset, bool _onOpen, uint256 _amount) external onlyProtocol {
@@ -168,7 +169,7 @@ contract PairsContract is Ownable, IPairsContract {
      * @dev edits the current open interest for short
      * @param _asset index of the asset
      * @param _tigAsset contract address of the tigAsset
-     * @param _onOpen true if adding to open interesr
+     * @param _onOpen true if adding to open interest
      * @param _amount amount to be added/removed from open interest
      */
     function modifyShortOi(uint256 _asset, address _tigAsset, bool _onOpen, uint256 _amount) external onlyProtocol {
@@ -194,7 +195,7 @@ contract PairsContract is Ownable, IPairsContract {
     // EVENTS
 
     event AssetAdded(
-        uint _asset,
+        uint256 _asset,
         string _name
     );
 

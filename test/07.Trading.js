@@ -96,7 +96,7 @@ describe("Trading", function () {
       await expect(trading.connect(user).setTradingExtension(user.address)).to.be.revertedWith("Ownable");
     });
     it("Set block delay", async function () {
-      await expect(trading.connect(user).setBlockDelay(1)).to.be.revertedWith("Ownable");
+      await expect(trading.connect(user).setTimeDelay(1)).to.be.revertedWith("Ownable");
     });
     it("Set allowed vault", async function () {
       await expect(trading.connect(user).setAllowedVault(StableVault.address, true)).to.be.revertedWith("Ownable");
@@ -776,15 +776,94 @@ describe("Trading", function () {
     /**
      * Non-reverting limit order tests
      */
-    it("Creating and executing limit buy order, should have correct price and bot fees", async function () {
+    it("Executing long order where TP would go past open price should remove TP", async function () {
+      // Create limit order
+      let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("21000"), parseEther("0"), ethers.constants.HashZero];
+      let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
+      await trading.connect(owner).initiateLimitOrder(TradeInfo, 2, parseEther("20000"), PermitData, owner.address);
+      expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
+
+      // Execute limit order
+      let PriceData = [node.address, 0, parseEther("21000"), 0, 2000000000, false]; // 0% spread
+      let message = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("21000"), 0, 2000000000, false]
+        )
+      );
+      let sig = await node.signMessage(
+        Buffer.from(message.substring(2), 'hex')
+      );
+
+      await trading.connect(user).executeLimitOrder(1, PriceData, sig);
+      expect(await position.limitOrdersLength(0)).to.equal(0); // Limit order executed
+      expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Creates open position
+      let [,,,,,tp,,,,,,] = await position.trades(1);
+      expect(tp).to.equal(0); // Should have removed TP
+    });
+    it("Executing short order where TP would go past open price should remove TP", async function () {
+      // Create limit order
+      let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, false, parseEther("19000"), parseEther("0"), ethers.constants.HashZero];
+      let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
+      await trading.connect(owner).initiateLimitOrder(TradeInfo, 2, parseEther("20000"), PermitData, owner.address);
+      expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
+
+      // Execute limit order
+      let PriceData = [node.address, 0, parseEther("19000"), 0, 2000000000, false]; // 0% spread
+      let message = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("19000"), 0, 2000000000, false]
+        )
+      );
+      let sig = await node.signMessage(
+        Buffer.from(message.substring(2), 'hex')
+      );
+
+      await trading.connect(user).executeLimitOrder(1, PriceData, sig);
+      expect(await position.limitOrdersLength(0)).to.equal(0); // Limit order executed
+      expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Creates open position
+      let [,,,,,tp,,,,,,] = await position.trades(1);
+      expect(tp).to.equal(0); // Should have removed TP
+    });
+    it("Executing limit order before a second has passed should have no bot fees", async function () {
       // Create limit order
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
       await trading.connect(owner).initiateLimitOrder(TradeInfo, 1, parseEther("20000"), PermitData, owner.address);
       expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
 
-      // Limit order delay
-      await network.provider.send("evm_increaseTime", [10]);
+      // Execute limit order
+      let PriceData = [node.address, 0, parseEther("10000"), 10000000, 2000000000, false]; // 0.1% spread
+      let message = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("10000"), 10000000, 2000000000, false]
+        )
+      );
+      let sig = await node.signMessage(
+        Buffer.from(message.substring(2), 'hex')
+      );
+
+      await trading.connect(user).executeLimitOrder(1, PriceData, sig);
+      expect(await position.limitOrdersLength(0)).to.equal(0); // Limit order executed
+      expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Creates open position
+      expect((await trading.openFees()).botFees).to.equal(2000000);
+      expect(await stabletoken.balanceOf(user.address)).to.equal(0); // No bot fees earned
+      let [,,,,price,,,,,,,] = await position.trades(1);
+      expect(price).to.equal(parseEther("20020")); // Should have guaranteed execution price with spread
+    });
+    it("Creating and executing limit buy order, should have correct price and bot fees", async function () {
+      await trading.connect(owner).setFees(true,5e6,5e6,1e6,2e6,0);
+      await trading.connect(owner).setFees(false,5e6,5e6,1e6,2e6,0);
+      // Create limit order
+      let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
+      let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
+      await trading.connect(owner).initiateLimitOrder(TradeInfo, 1, parseEther("20000"), PermitData, owner.address);
+      expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
+
+      // lastLimitUpdate
+      await network.provider.send("evm_increaseTime", [1]);
       await network.provider.send("evm_mine");
 
       // Execute limit order
@@ -799,7 +878,11 @@ describe("Trading", function () {
         Buffer.from(message.substring(2), 'hex')
       );
       
+      let oi = await pairscontract.idToOi(0, stabletoken.address);
+      expect(oi.longOi).to.equal(0);
       await trading.connect(user).executeLimitOrder(1, PriceData, sig);
+      oi = await pairscontract.idToOi(0, stabletoken.address);
+      expect(oi.longOi).to.equal(parseEther("9900"));
       expect(await position.limitOrdersLength(0)).to.equal(0); // Limit order executed
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Creates open position
       expect((await trading.openFees()).botFees).to.equal(2000000);
@@ -808,14 +891,16 @@ describe("Trading", function () {
       expect(price).to.equal(parseEther("20020")); // Should have guaranteed execution price with spread
     });
     it("Creating and executing limit sell order, should have correct price and bot fees", async function () {
+      await trading.connect(owner).setFees(true,5e6,5e6,1e6,2e6,0);
+      await trading.connect(owner).setFees(false,5e6,5e6,1e6,2e6,0);
       // Create limit order
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, false, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
       await trading.connect(owner).initiateLimitOrder(TradeInfo, 1, parseEther("10000"), PermitData, owner.address);
       expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
 
-      // Limit order delay
-      await network.provider.send("evm_increaseTime", [10]);
+      // lastLimitUpdate
+      await network.provider.send("evm_increaseTime", [1]);
       await network.provider.send("evm_mine");
 
       // Execute limit order
@@ -830,7 +915,11 @@ describe("Trading", function () {
         Buffer.from(message.substring(2), 'hex')
       );
             
+      let oi = await pairscontract.idToOi(0, stabletoken.address);
+      expect(oi.shortOi).to.equal(0);
       await trading.connect(user).executeLimitOrder(1, PriceData, sig);
+      oi = await pairscontract.idToOi(0, stabletoken.address);
+      expect(oi.shortOi).to.equal(parseEther("9900"));
       expect(await position.limitOrdersLength(0)).to.equal(0); // Limit order executed
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Creates open position
       expect(await stabletoken.balanceOf(user.address)).to.equal(parseEther("2"));
@@ -844,8 +933,8 @@ describe("Trading", function () {
       await trading.connect(owner).initiateLimitOrder(TradeInfo, 2, parseEther("20000"), PermitData, owner.address);
       expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
 
-      // Limit order delay
-      await network.provider.send("evm_increaseTime", [10]);
+      // lastLimitUpdate
+      await network.provider.send("evm_increaseTime", [1]);
       await network.provider.send("evm_mine");
 
       // Execute limit order
@@ -860,7 +949,11 @@ describe("Trading", function () {
         Buffer.from(message.substring(2), 'hex')
       );
             
+      let oi = await pairscontract.idToOi(0, stabletoken.address);
+      expect(oi.longOi).to.equal(0);
       await trading.connect(user).executeLimitOrder(1, PriceData, sig);
+      oi = await pairscontract.idToOi(0, stabletoken.address);
+      expect(oi.longOi).to.equal(parseEther("9900"));
       expect(await position.limitOrdersLength(0)).to.equal(0); // Limit order executed
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Creates open position
       expect(await stabletoken.balanceOf(user.address)).to.equal(parseEther("2"));
@@ -874,8 +967,8 @@ describe("Trading", function () {
       await trading.connect(owner).initiateLimitOrder(TradeInfo, 2, parseEther("20000"), PermitData, owner.address);
       expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
 
-      // Limit order delay
-      await network.provider.send("evm_increaseTime", [10]);
+      // lastLimitUpdate
+      await network.provider.send("evm_increaseTime", [1]);
       await network.provider.send("evm_mine");
 
       // Execute limit order
@@ -890,7 +983,11 @@ describe("Trading", function () {
         Buffer.from(message.substring(2), 'hex')
       );
             
+      let oi = await pairscontract.idToOi(0, stabletoken.address);
+      expect(oi.shortOi).to.equal(0);
       await trading.connect(user).executeLimitOrder(1, PriceData, sig);
+      oi = await pairscontract.idToOi(0, stabletoken.address);
+      expect(oi.shortOi).to.equal(parseEther("9900"));
       expect(await position.limitOrdersLength(0)).to.equal(0); // Limit order executed
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Creates open position
       expect(await stabletoken.balanceOf(user.address)).to.equal(parseEther("2"));
@@ -900,27 +997,6 @@ describe("Trading", function () {
     /**
      * Reverting limit order tests
      */
-    it("Executing a limit order should revert if limit delay hasn't passed", async function () {
-      // Create limit order
-      let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
-      await trading.connect(owner).initiateLimitOrder(TradeInfo, 1, parseEther("20000"), PermitData, owner.address);
-      expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
-
-      // Execute limit order
-      let PriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
-      let message = ethers.utils.keccak256(
-        ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
-        )
-      );
-      let sig = await node.signMessage(
-        Buffer.from(message.substring(2), 'hex')
-      );
-      
-      await expect(trading.connect(user).executeLimitOrder(1, PriceData, sig)).to.be.revertedWith("");
-    });
     it("Creating a limit with zero price should revert", async function () {
       // Create limit order
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
@@ -958,8 +1034,8 @@ describe("Trading", function () {
       await trading.connect(owner).initiateLimitOrder(TradeInfo, 1, parseEther("20000"), PermitData, owner.address);
       expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
 
-      // Limit order delay
-      await network.provider.send("evm_increaseTime", [10]);
+      // lastLimitUpdate
+      await network.provider.send("evm_increaseTime", [1]);
       await network.provider.send("evm_mine");
       
       // Execute limit order
@@ -983,8 +1059,8 @@ describe("Trading", function () {
       await trading.connect(owner).initiateLimitOrder(TradeInfo, 1, parseEther("20000"), PermitData, owner.address);
       expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
 
-      // Limit order delay
-      await network.provider.send("evm_increaseTime", [10]);
+      // lastLimitUpdate
+      await network.provider.send("evm_increaseTime", [1]);
       await network.provider.send("evm_mine");
       
       // Execute limit order
@@ -1008,8 +1084,8 @@ describe("Trading", function () {
       await trading.connect(owner).initiateLimitOrder(TradeInfo, 2, parseEther("20000"), PermitData, owner.address);
       expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
 
-      // Limit order delay
-      await network.provider.send("evm_increaseTime", [10]);
+      // lastLimitUpdate
+      await network.provider.send("evm_increaseTime", [1]);
       await network.provider.send("evm_mine");
       
       // Execute limit order
@@ -1033,8 +1109,8 @@ describe("Trading", function () {
       await trading.connect(owner).initiateLimitOrder(TradeInfo, 2, parseEther("20000"), PermitData, owner.address);
       expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
 
-      // Limit order delay
-      await network.provider.send("evm_increaseTime", [10]);
+      // lastLimitUpdate
+      await network.provider.send("evm_increaseTime", [1]);
       await network.provider.send("evm_mine");
       
       // Execute limit order
@@ -1059,8 +1135,8 @@ describe("Trading", function () {
       await trading.connect(owner).initiateLimitOrder(TradeInfo, 2, parseEther("20000"), PermitData, owner.address);
       expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
 
-      // Limit order delay
-      await network.provider.send("evm_increaseTime", [10]);
+      // lastLimitUpdate
+      await network.provider.send("evm_increaseTime", [1]);
       await network.provider.send("evm_mine");
       
       // Execute limit order
@@ -1085,8 +1161,8 @@ describe("Trading", function () {
       await trading.connect(owner).initiateLimitOrder(TradeInfo, 2, parseEther("20000"), PermitData, owner.address);
       expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
 
-      // Limit order delay
-      await network.provider.send("evm_increaseTime", [10]);
+      // lastLimitUpdate
+      await network.provider.send("evm_increaseTime", [1]);
       await network.provider.send("evm_mine");
       
       // Execute limit order
@@ -1106,6 +1182,39 @@ describe("Trading", function () {
     /**
      * Reverting SL/TP tests
      */
+    it("Executing TP before block delay has passed should revert", async function () {
+      // Open position
+      trading.connect(owner).setTimeDelay(10); // 10 second delay
+      let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("22000"), parseEther("0"), ethers.constants.HashZero];
+      let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let openMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+        )
+      );
+      let openSig = await node.signMessage(
+        Buffer.from(openMessage.substring(2), 'hex')
+      );
+      
+      let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
+      await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
+      expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Trade has opened
+
+      let closePriceData = [node.address, 0, parseEther("22000"), 0, 2000000000, false];
+      let closeMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("22000"), 0, 2000000000, false]
+        )
+      );
+      let closeSig = await node.signMessage(
+        Buffer.from(closeMessage.substring(2), 'hex')
+      );
+      
+      // Attempt TP execution
+      await expect(trading.connect(user).limitClose(1, true, closePriceData, closeSig)).to.be.revertedWith("0"); // Revert in _checkDelay
+    });
     it("Executing an unmet long TP should revert", async function () {
       // Open position
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("30000"), parseEther("0"), ethers.constants.HashZero];
@@ -1268,6 +1377,45 @@ describe("Trading", function () {
     /**
      * Non-reverting SL/TP tests
      */
+    it("Executing a TP/SL should have no bot fees if a second hasn't passed since last update", async function () {
+      await pairscontract.connect(owner).setAssetBaseFundingRate(0, 0); // Funding rate messes with results because of time
+      await trading.connect(owner).setFees(true,0,0,0,0,0); // Set fees to zero for easier calculation
+      await trading.connect(owner).setFees(false,0,0,0,0,0); // Set fees to zero for easier calculation
+      // Open position
+      let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("22000"), parseEther("0"), ethers.constants.HashZero];
+      let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let openMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+        )
+      );
+      let openSig = await node.signMessage(
+        Buffer.from(openMessage.substring(2), 'hex')
+      );
+      
+      let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
+      await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
+      expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Trade has opened
+      // TP execution
+      await trading.connect(owner).setFees(true,1e7,0,0,1e7,0); // Easier to calculate with only bot fees
+      await trading.connect(owner).setFees(false,1e7,0,0,1e7,0); // Easier to calculate with only bot fees
+      let closePriceData = [node.address, 0, parseEther("22000"), 0, 2000000000, false];
+      let closeMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("22000"), 0, 2000000000, false]
+        )
+      );
+      let closeSig = await node.signMessage(
+        Buffer.from(closeMessage.substring(2), 'hex')
+      );
+      // Update TPSL
+      await trading.connect(owner).updateTpSl(true, 1, parseEther("22000"), closePriceData, closeSig, owner.address);
+      await trading.connect(user).limitClose(1, true, closePriceData, closeSig);
+      expect(await stabletoken.balanceOf(owner.address)).to.equal(parseEther("1989"));
+      expect(await stabletoken.balanceOf(user.address)).to.equal(0); // No bot fees earned
+    });
     it("Executing a long TP should have correct fees and payout", async function () {
       await pairscontract.connect(owner).setAssetBaseFundingRate(0, 0); // Funding rate messes with results because of time
       await trading.connect(owner).setFees(true,0,0,0,0,0); // Set fees to zero for easier calculation
@@ -1653,9 +1801,19 @@ describe("Trading", function () {
     });
     it("Add margin should revert if on limit order", async function () {
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
+      let priceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let message = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+        )
+      );
+      let sig = await node.signMessage(
+        Buffer.from(message.substring(2), 'hex')
+      );
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
       await trading.connect(owner).initiateLimitOrder(TradeInfo, 1, parseEther("20000"), PermitData, owner.address);
-      await expect(trading.connect(owner).addMargin(1, StableToken.address, StableVault.address, parseEther("1000"), PermitData, owner.address)).to.be.revertedWith("");
+      await expect(trading.connect(owner).addMargin(1, StableVault.address, StableToken.address, parseEther("1000"), priceData, sig, PermitData, owner.address)).to.be.revertedWith("");
     });
     it("Add margin should revert if leverage goes below min leverage", async function () {
       await stabletoken.connect(owner).setMinter(owner.address, true);
@@ -1674,7 +1832,7 @@ describe("Trading", function () {
       
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
       await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
-      await expect(trading.connect(owner).addMargin(1, StableToken.address, StableVault.address, parseEther("1000000"), PermitData, owner.address)).to.be.revertedWith("!lev");
+      await expect(trading.connect(owner).addMargin(1, StableVault.address, StableToken.address, parseEther("1000000"), openPriceData, openSig, PermitData, owner.address)).to.be.revertedWith("!lev");
     });
     it("Add margin with non-tigAsset", async function () {
       await trading.connect(owner).setFees(true,0,0,0,0,0); // Easier to calculate without fees
@@ -1693,7 +1851,7 @@ describe("Trading", function () {
       
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
       await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
-      await trading.connect(owner).addMargin(1, MockDAI.address, StableVault.address, parseEther("1000"), [0, 0, 0, ethers.constants.HashZero, ethers.constants.HashZero, false], owner.address);
+      await trading.connect(owner).addMargin(1, StableVault.address, MockDAI.address, parseEther("1000"), openPriceData, openSig, [0, 0, 0, ethers.constants.HashZero, ethers.constants.HashZero, false], owner.address);
       let [margin,leverage,,,,,,,,,,] = await position.trades(1);
       expect(margin).to.equal(parseEther("2000"));
       expect(leverage).to.equal(parseEther("5"));
@@ -1717,7 +1875,7 @@ describe("Trading", function () {
       
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
       await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
-      await trading.connect(owner).addMargin(1, StableToken.address, StableVault.address, parseEther("1000"), [0, 0, 0, ethers.constants.HashZero, ethers.constants.HashZero, false], owner.address);
+      await trading.connect(owner).addMargin(1, StableVault.address, StableToken.address, parseEther("1000"), openPriceData, openSig, [0, 0, 0, ethers.constants.HashZero, ethers.constants.HashZero, false], owner.address);
       expect(await stabletoken.balanceOf(owner.address)).to.equal(parseEther("0")); // Should no tigAsset left
       let [margin,leverage,,,,,,,,,,] = await position.trades(1);
       expect(margin).to.equal(parseEther("2000"));
@@ -1743,7 +1901,7 @@ describe("Trading", function () {
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
       await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
       let PermitSig = await signERC2612Permit(owner, MockDAI.address, owner.address, Trading.address, ethers.constants.MaxUint256);
-      await trading.connect(owner).addMargin(1, MockDAI.address, StableVault.address, parseEther("1000"), [PermitSig.deadline, ethers.constants.MaxUint256, PermitSig.v, PermitSig.r, PermitSig.s, true], owner.address);
+      await trading.connect(owner).addMargin(1, StableVault.address, MockDAI.address, parseEther("1000"), openPriceData, openSig, [PermitSig.deadline, ethers.constants.MaxUint256, PermitSig.v, PermitSig.r, PermitSig.s, true], owner.address);
       let [margin,leverage,,,,,,,,,,] = await position.trades(1);
       expect(margin).to.equal(parseEther("2000"));
       expect(leverage).to.equal(parseEther("5"));
@@ -1866,6 +2024,8 @@ describe("Trading", function () {
       await expect(trading.connect(owner).addToPosition(1, parseEther("3000"), addPriceData, addSig, StableVault.address, StableToken.address, PermitData, owner.address)).to.be.revertedWith("4");
     });
     it("Adding to position on long should combine margin and open price proportionally, accInterest should work as expected", async function () {
+      await trading.connect(owner).setFees(true,0,0,0,0,0); // Easier to calculate without fees
+      await trading.connect(owner).setFees(false,0,0,0,0,0); // Easier to calculate without fees
       await pairscontract.connect(owner).setAssetBaseFundingRate(0, 1e9); // 10% Annual rate
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
       let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
@@ -1879,48 +2039,6 @@ describe("Trading", function () {
         Buffer.from(openMessage.substring(2), 'hex')
       );
       
-
-      let addPriceData = [node.address, 0, parseEther("10000"), 0, 2031538000, false];
-      let addMessage = ethers.utils.keccak256(
-        ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2031538000, false]
-        )
-      );
-      let addSig = await node.signMessage(
-        Buffer.from(addMessage.substring(2), 'hex')
-      );
-
-      let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
-      await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
-      await stabletoken.connect(owner).setMinter(owner.address, true);
-      await stabletoken.connect(owner).mintFor(owner.address, parseEther("3030"));
-      await network.provider.send("evm_setNextBlockTimestamp", [2031538000]); // 1 year passes
-      await network.provider.send("evm_mine");
-      let [,,,,,,,,,,,accInterest] = await position.trades(1);
-      expect(Math.round(parseInt(accInterest/1e18))).to.equal(-497);
-      await trading.connect(owner).addToPosition(1, parseEther("3000"), addPriceData, addSig, StableVault.address, StableToken.address, PermitData, owner.address);
-      let [margin,leverage,,,openPrice,,,,,,,accInterestAfter] = await position.trades(1);
-      expect(Math.round(parseInt(accInterestAfter/1e18))).to.equal(-497); // accInterest stays the same
-      expect(margin).to.equal(parseEther("3980")); // Margin combined
-      expect(leverage).to.equal(parseEther("5")); // Leverage stays the same
-      expect(openPrice).to.equal(parseEther("12500")); // Open price combined proportionally
-    });
-    it("Adding to position on short should combine margin and open price proportionally, accInterest should work as expected", async function () {
-      await pairscontract.connect(owner).setAssetBaseFundingRate(0, 1e9); // 10% Annual rate
-      let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, false, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
-      let openMessage = ethers.utils.keccak256(
-        ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
-        )
-      );
-      let openSig = await node.signMessage(
-        Buffer.from(openMessage.substring(2), 'hex')
-      );
-      
-
       let addPriceData = [node.address, 0, parseEther("10000"), 0, 2031538000, false];
       let addMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
@@ -1938,14 +2056,165 @@ describe("Trading", function () {
       await stabletoken.connect(owner).mintFor(owner.address, parseEther("3000"));
       await network.provider.send("evm_setNextBlockTimestamp", [2031538000]); // 1 year passes
       await network.provider.send("evm_mine");
-      let [,,,,,,,,,,,accInterest] = await position.trades(1);
-      expect(Math.round(parseInt(accInterest/1e18))).to.equal(-497);
+
+      let tradeBefore = await position.trades(1);
+      expect(Math.round(parseInt(tradeBefore.accInterest/1e18))).to.equal(-500);
+      let pnlBefore = await tradinglibrary.pnl(tradeBefore.direction, parseEther("10000"), tradeBefore.price,
+      tradeBefore.margin, tradeBefore.leverage, tradeBefore.accInterest);
+
       await trading.connect(owner).addToPosition(1, parseEther("3000"), addPriceData, addSig, StableVault.address, StableToken.address, PermitData, owner.address);
+
       let [margin,leverage,,,openPrice,,,,,,,accInterestAfter] = await position.trades(1);
-      expect(Math.round(parseInt(accInterestAfter/1e18))).to.equal(-497); // accInterest stays the same
-      expect(margin).to.equal(parseEther("3980")); // Margin combined
+      expect(Math.round(parseInt(accInterestAfter/1e18))).to.equal(-500); // accInterest stays the same
+      expect(margin).to.equal(parseEther("4000")); // Margin combined
       expect(leverage).to.equal(parseEther("5")); // Leverage stays the same
-      expect(openPrice).to.equal(parseEther("12500")); // Open price combined proportionally
+      expect(openPrice).to.equal("11428571428571428571428"); // Open price combined proportionally
+      let tradeAfter = await position.trades(1);
+      let pnlAfter = await tradinglibrary.pnl(tradeAfter.direction, parseEther("10000"), tradeAfter.price,
+        tradeAfter.margin, tradeAfter.leverage, tradeAfter.accInterest);
+      expect(Math.round(pnlAfter._payout/1e14)).to.equal(Math.round(pnlBefore._payout/1e14)+3000e4); // Check payout
+    });
+    it("Adding to position on short should combine margin and open price proportionally, accInterest should work as expected", async function () {
+      await trading.connect(owner).setFees(true,0,0,0,0,0); // Easier to calculate without fees
+      await trading.connect(owner).setFees(false,0,0,0,0,0); // Easier to calculate without fees
+      await pairscontract.connect(owner).setAssetBaseFundingRate(0, 1e9); // 10% Annual rate
+      let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, false, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
+      let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let openMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+        )
+      );
+      let openSig = await node.signMessage(
+        Buffer.from(openMessage.substring(2), 'hex')
+      );
+      
+      let addPriceData = [node.address, 0, parseEther("10000"), 0, 2031538000, false];
+      let addMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("10000"), 0, 2031538000, false]
+        )
+      );
+      let addSig = await node.signMessage(
+        Buffer.from(addMessage.substring(2), 'hex')
+      );
+
+      let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
+      await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
+      await stabletoken.connect(owner).setMinter(owner.address, true);
+      await stabletoken.connect(owner).mintFor(owner.address, parseEther("3000"));
+      await network.provider.send("evm_setNextBlockTimestamp", [2031538000]); // 1 year passes
+      await network.provider.send("evm_mine");
+
+      let tradeBefore = await position.trades(1);
+      expect(Math.round(parseInt(tradeBefore.accInterest/1e18))).to.equal(-500);
+      let pnlBefore = await tradinglibrary.pnl(tradeBefore.direction, parseEther("10000"), tradeBefore.price,
+        tradeBefore.margin, tradeBefore.leverage, tradeBefore.accInterest);
+
+      await trading.connect(owner).addToPosition(1, parseEther("3000"), addPriceData, addSig, StableVault.address, StableToken.address, PermitData, owner.address);
+
+      let [margin,leverage,,,openPrice,,,,,,,accInterestAfter] = await position.trades(1);
+      expect(Math.round(parseInt(accInterestAfter/1e18))).to.equal(-500); // accInterest stays the same
+      expect(margin).to.equal(parseEther("4000")); // Margin combined
+      expect(leverage).to.equal(parseEther("5")); // Leverage stays the same
+      expect(openPrice).to.equal("11428571428571428571428"); // Open price combined proportionally
+      let tradeAfter = await position.trades(1);
+      let pnlAfter = await tradinglibrary.pnl(tradeAfter.direction, parseEther("10000"), tradeAfter.price,
+        tradeAfter.margin, tradeAfter.leverage, tradeAfter.accInterest);
+      expect(Math.round(pnlAfter._payout/1e14)).to.equal(Math.round(pnlBefore._payout/1e14)+3000e4); // Check payout
+    });
+    it("Add margin should revert if current PnL >= maxPnL% - 100%", async function () {
+      await pairscontract.connect(owner).setAssetBaseFundingRate(0, 0);
+      await trading.connect(owner).setMaxWinPercent(6e10); // +500% max win, should revert with +400%
+      let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("2"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
+      let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let openMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+        )
+      );
+      let openSig = await node.signMessage(
+        Buffer.from(openMessage.substring(2), 'hex')
+      );
+      let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
+      await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
+
+      // +400% PnL
+      let newPriceData = [node.address, 0, parseEther("30000"), 0, 2000000000, false];
+      let newMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("30000"), 0, 2000000000, false]
+        )
+      );
+      let newSig = await node.signMessage(
+        Buffer.from(newMessage.substring(2), 'hex')
+      );
+      await expect(trading.connect(owner).addMargin(1, StableVault.address, StableToken.address, parseEther("100"), newPriceData, newSig, PermitData, owner.address)).to.be.revertedWith("CloseToMaxPnL");
+    });
+    it("Remove margin should revert if current PnL >= maxPnL% - 100%", async function () {
+      await pairscontract.connect(owner).setAssetBaseFundingRate(0, 0);
+      await trading.connect(owner).setMaxWinPercent(6e10); // +500% max win, should revert with +400%
+      let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("2"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
+      let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let openMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+        )
+      );
+      let openSig = await node.signMessage(
+        Buffer.from(openMessage.substring(2), 'hex')
+      );
+      let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
+      await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
+
+      // +400% PnL
+      let newPriceData = [node.address, 0, parseEther("30000"), 0, 2000000000, false];
+      let newMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("30000"), 0, 2000000000, false]
+        )
+      );
+      let newSig = await node.signMessage(
+        Buffer.from(newMessage.substring(2), 'hex')
+      );
+      await expect(trading.connect(owner).removeMargin(1, StableVault.address, StableToken.address, parseEther("100"), newPriceData, newSig, owner.address)).to.be.revertedWith("CloseToMaxPnL");
+    });
+    it("Adding to position should revert if current PnL >= maxPnL% - 100%", async function () {
+      await pairscontract.connect(owner).setAssetBaseFundingRate(0, 0);
+      await trading.connect(owner).setMaxWinPercent(6e10); // +500% max win, should revert with +400%
+      let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("2"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
+      let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let openMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+        )
+      );
+      let openSig = await node.signMessage(
+        Buffer.from(openMessage.substring(2), 'hex')
+      );
+      
+      // +400% PnL
+      let addPriceData = [node.address, 0, parseEther("30000"), 0, 2000000000, false];
+      let addMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("30000"), 0, 2000000000, false]
+        )
+      );
+      let addSig = await node.signMessage(
+        Buffer.from(addMessage.substring(2), 'hex')
+      );
+
+      let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
+      await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
+      await expect(trading.connect(owner).addToPosition(1, parseEther("100"), addPriceData, addSig, StableVault.address, StableToken.address, PermitData, owner.address)).to.be.revertedWith("CloseToMaxPnL");
     });
   });
   describe("PnL calculations", function () {
@@ -2089,7 +2358,7 @@ describe("Trading", function () {
       await trading.connect(owner).initiateCloseOrder(1, 1e10, closePriceData, closeSig, StableVault.address, StableToken.address, owner.address);
       expect(await stabletoken.balanceOf(owner.address)).to.equal(parseEther("500")); // Margin - 10% * 5 * Margin = $500
     });
-    it("Max win should be capped to 10x", async function () {
+    it("Max win should be capped to 10x on full close", async function () {
       await trading.connect(owner).setMaxWinPercent(1e11);
       await pairscontract.connect(owner).setAssetBaseFundingRate(0, 0); // Funding rate messes with results because of time
       await trading.connect(owner).setFees(true,0,0,0,0,0); // Easier to calculate without fees
@@ -2124,6 +2393,42 @@ describe("Trading", function () {
       
       await trading.connect(owner).initiateCloseOrder(1, 1e10, closePriceData, closeSig, StableVault.address, StableToken.address, owner.address);
       expect(await stabletoken.balanceOf(owner.address)).to.equal(parseEther("10000")); // Max win is Margin * 10 = $10,000
+    });
+    it("Max win should be capped to 10x on partial close relative to margin being closed", async function () {
+      await trading.connect(owner).setMaxWinPercent(1e11);
+      await pairscontract.connect(owner).setAssetBaseFundingRate(0, 0); // Funding rate messes with results because of time
+      await trading.connect(owner).setFees(true,0,0,0,0,0); // Easier to calculate without fees
+      await trading.connect(owner).setFees(false,0,0,0,0,0); // Easier to calculate without fees
+      let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
+      let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let openMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+        )
+      );
+      let openSig = await node.signMessage(
+        Buffer.from(openMessage.substring(2), 'hex')
+      );
+      
+      let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
+      await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
+      expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Trade has opened
+      expect(await stabletoken.balanceOf(owner.address)).to.equal(0); // Starts with zero balance
+
+      let closePriceData = [node.address, 0, parseEther("100000"), 0, 2000000000, false]; // Price 1000% higher
+      let closeMessage = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
+          [node.address, 0, parseEther("100000"), 0, 2000000000, false]
+        )
+      );
+      let closeSig = await node.signMessage(
+        Buffer.from(closeMessage.substring(2), 'hex')
+      );
+      
+      await trading.connect(owner).initiateCloseOrder(1, 5e9, closePriceData, closeSig, StableVault.address, StableToken.address, owner.address);
+      expect(await stabletoken.balanceOf(owner.address)).to.equal(parseEther("5000")); // Max win is 50% * margin * 10 = $5,000
     });
     it("Max win should be unlimited if max win is set to zero", async function () {
       await trading.connect(owner).setMaxWinPercent(0);
@@ -2237,7 +2542,7 @@ describe("Trading", function () {
   });
   describe("Order minimum delay check", function () {
     it("CheckDelay on opening + interaction should work as expected", async function () {
-      trading.connect(owner).setBlockDelay(1000); // 1000 block delay
+      trading.connect(owner).setTimeDelay(1000); // 1000 second delay
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
       let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
       let openMessage = ethers.utils.keccak256(
@@ -2396,13 +2701,14 @@ describe("Trading", function () {
       expect(await referrals.getReferred(owner.address)).to.equal(ethers.constants.HashZero); // Trader not referred
     });
     it("Referrer should receive the correct amount of referral rewards and decreased trading fee should be correct on both opening and closing and referral should be locked", async function () {
-      // await trading.connect(owner).setFees(true,3e8,1e8,1e8,1e8,1e8);
-      // await trading.connect(owner).setFees(false,3e8,1e8,1e8,1e8,1e8);
+      // Trading fee 0.1% of which referral fee 0.01%
+      await trading.connect(owner).setFees(true,5e6,5e6,1e6,1e6,0);
+      await trading.connect(owner).setFees(true,5e6,5e6,1e6,1e6,0);
+
       await pairscontract.connect(owner).setAssetBaseFundingRate(0, 0); // Funding rate messes with results because of time
       await referrals.connect(user).createReferralCode(ethers.utils.id("testcode"));
       expect(await stabletoken.balanceOf(user.address)).to.equal(parseEther("0"));
 
-      
       let TradeInfo = [parseEther("10000"), MockDAI.address, StableVault.address, parseEther("100"), 0, false, parseEther("0"), parseEther("0"), ethers.utils.id("testcode")];
       let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
       let message = ethers.utils.keccak256(
@@ -2416,12 +2722,12 @@ describe("Trading", function () {
       );
       
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
-      
 
       await trading.connect(owner).initiateMarketOrder(TradeInfo, PriceData, sig, PermitData, owner.address);
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Trade has opened
       let [margin,,,,,,,,,,,] = await position.trades(1);
-      expect(margin).to.equal(parseEther("9200")); // No fees taken after opening
+      expect(margin).to.equal(parseEther("9100")); // 10% fee discount
+      expect(await stabletoken.balanceOf(user.address)).to.equal(parseEther("100")); // 0.01% * 10000 * 100 = $100
 
       // Referral should be locked for the trader after being used once
       await referrals.connect(user).createReferralCode(ethers.utils.id("testcode2"));
@@ -2437,15 +2743,13 @@ describe("Trading", function () {
       let sig2 = await node.signMessage(
         Buffer.from(message2.substring(2), 'hex')
       );
-      let sigs2 = [sig2];
       let PermitData2 = [0, 0, 0, ethers.constants.HashZero, ethers.constants.HashZero, false]; // No permit needed
 
-      expect(await stabletoken.balanceOf(user.address)).to.equal(parseEther("100"));
       await trading.connect(owner).initiateMarketOrder(TradeInfo2, PriceData2, sig2, PermitData2, owner.address);
-      expect(await stabletoken.balanceOf(user.address)).to.equal(parseEther("200")); 
+      expect(await stabletoken.balanceOf(user.address)).to.equal(parseEther("200")); // + 0.01% * 10000 * 100 = $200
       expect(await position.assetOpenPositionsLength(0)).to.equal(2); // Trade has opened
       let [margin2,,,,,,,,,,,] = await position.trades(2);
-      expect(margin2).to.equal(parseEther("9200")); // No opening fees taken
+      expect(margin2).to.equal(parseEther("9100")); // 10% fee discount
 
       // Referrer should earn fees upon closing
       let PriceData3 = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
@@ -2458,10 +2762,9 @@ describe("Trading", function () {
       let sig3 = await node.signMessage(
         Buffer.from(message3.substring(2), 'hex')
       );
-      let sigs3 = [sig3];
       await trading.connect(owner).initiateCloseOrder(2, 1e10, PriceData3, sig3, StableVault.address, MockDAI.address, owner.address);
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // One trade has closed
-      expect(await stabletoken.balanceOf(user.address)).to.equal(parseEther("292"));
+      expect(await stabletoken.balanceOf(user.address)).to.equal(parseEther("291")); // + 0.01% * 9100 * 100 = $291
 
       // Closing last position
       let PriceData4 = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
@@ -2474,10 +2777,9 @@ describe("Trading", function () {
       let sig4 = await node.signMessage(
         Buffer.from(message4.substring(2), 'hex')
       );
-      let sigs4 = [sig4];
       await trading.connect(owner).initiateCloseOrder(1, 1e10, PriceData4, sig4, StableVault.address, StableToken.address, owner.address);
       expect(await position.assetOpenPositionsLength(0)).to.equal(0); // Both trades have closed
-      expect(await stabletoken.balanceOf(user.address)).to.equal(parseEther("384")); // Closing: 2 * $1,000,000 * 0.01% = $200
+      expect(await stabletoken.balanceOf(user.address)).to.equal(parseEther("382")); // + 0.01% * 9100 * 100 = $382
     });
   });
   describe("Comparing node's prices to Chainlink price feed", function () {

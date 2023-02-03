@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.18;
 
 interface ILayerZeroReceiver {
     // @notice LayerZero endpoint will invoke this function to deliver the message on the destination
