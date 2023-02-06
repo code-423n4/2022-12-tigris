@@ -10,18 +10,19 @@ import "./interfaces/IPosition.sol";
 contract TradingExtension is Ownable{
     uint256 constant private DIVISION_CONSTANT = 1e10; // 100%
 
-    address public trading;
-    uint256 public validSignatureTimer;
+    address public immutable trading;
     bool public chainlinkEnabled;
+    bool public paused;
+    uint256 public validSignatureTimer;
+
 
     mapping(address => bool) private isNode;
     mapping(address => uint) public minPositionSize;
     mapping(address => bool) public allowedMargin;
-    bool public paused;
 
-    IPairsContract private pairsContract;
-    IReferrals private referrals;
-    IPosition private position;
+    IPairsContract private immutable pairsContract;
+    IReferrals private immutable referrals;
+    IPosition private immutable position;
 
     uint256 public maxGasPrice = 1000 gwei;
 

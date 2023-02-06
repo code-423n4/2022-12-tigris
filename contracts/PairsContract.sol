@@ -50,7 +50,8 @@ contract PairsContract is Ownable, IPairsContract {
         bytes memory _assetName  = bytes(_idToAsset[_asset].name);
         require(_assetName.length == 0, "Already exists");
         require(bytes(_name).length > 0, "No name");
-        require(_maxLeverage >= _minLeverage && _minLeverage > 0, "Wrong leverage values");
+        require(_maxLeverage >= _minLeverage, "Wrong leverage values");
+        require(_minLeverage > 0, "Wrong leverage values");
 
         allowedAsset[_asset] = true;
         _idToAsset[_asset].name = _name;

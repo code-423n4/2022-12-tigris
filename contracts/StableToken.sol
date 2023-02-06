@@ -54,7 +54,7 @@ contract StableToken is ERC20Permit, MetaContext {
     }
 
     // META-TX
-    function _msgSender() internal view override(Context, MetaContext) returns (address sender) {
+    function _msgSender() internal view override(Context, MetaContext) returns (address) {
         return MetaContext._msgSender();
     }
 

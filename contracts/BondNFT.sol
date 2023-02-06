@@ -15,6 +15,7 @@ contract BondNFT is ERC721Enumerable, Ownable {
         uint256 id;
         address owner;
         address asset;
+        bool expired;
         uint256 amount;
         uint256 mintEpoch;
         uint256 mintTime;
@@ -22,7 +23,6 @@ contract BondNFT is ERC721Enumerable, Ownable {
         uint256 pending;
         uint256 shares;
         uint256 period;
-        bool expired;
     }
 
     mapping(address => uint256) public epoch;
@@ -72,14 +72,14 @@ contract BondNFT is ERC721Enumerable, Ownable {
                 id,             // id
                 address(0),     // owner
                 _asset,         // tigAsset token
+                false,          // is expired boolean
                 _amount,        // tigAsset amount
                 epoch[_asset],  // mint epoch
                 block.timestamp,// mint timestamp
                 expireEpoch,    // expire epoch
                 0,              // pending
                 shares,         // linearly scaling share of rewards
-                _period,        // lock period
-                false           // is expired boolean
+                _period         // lock period
             );
             _idToBond[id] = _bond;
             _mint(_owner, _bond);
@@ -154,13 +154,17 @@ contract BondNFT is ERC721Enumerable, Ownable {
         }
         amount = bond.amount;
         unchecked {
-            totalShares[bond.asset] -= bond.shares;
-            uint256 _pendingDelta = (bond.shares * accRewardsPerShare[bond.asset][epoch[bond.asset]] / 1e18 - bondPaid[_id][bond.asset]) - (bond.shares * accRewardsPerShare[bond.asset][bond.expireEpoch-1] / 1e18 - bondPaid[_id][bond.asset]);
-            if (totalShares[bond.asset] > 0) {
-                accRewardsPerShare[bond.asset][epoch[bond.asset]] += _pendingDelta*1e18/totalShares[bond.asset];
+            totalShares[bond.asset] = totalShares[bond.asset] - bond.shares;
+            uint256 _bondPaid = bondPaid[_id][bond.asset];
+
+            uint256 _pendingDelta = (bond.shares * accRewardsPerShare[bond.asset][epoch[bond.asset]] / 1e18 - _bondPaid) - (bond.shares * accRewardsPerShare[bond.asset][bond.expireEpoch-1] / 1e18 - _bondPaid);
+
+            uint _totalShares = totalShares[bond.asset];
+            if (_totalShares > 0) {
+                accRewardsPerShare[bond.asset][epoch[bond.asset]] += _pendingDelta*1e18/_totalShares;
             }
             (uint256 _claimAmount,) = claim(_id, bond.owner);
-            amount += _claimAmount;
+            amount = amount + _claimAmount;
         }
         asset = bond.asset;
         lockAmount = bond.amount;

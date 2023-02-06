@@ -49,8 +49,8 @@ contract GovNFT is ERC721Enumerable, ILayerZeroReceiver, MetaContext, IGovNFT {
     }
 
     function _mint(address to, uint256 tokenId) internal override {
-        require(counter <= MAX, "Exceeds supply");
-        counter += 1;
+        require(counter <= MAX, "!supply");
+        counter = counter + 1;
         for (uint256 i=0; i<assetsLength(); i++) {
             userPaid[to][assets[i]] += accRewardsPerNFT[assets[i]];
         }
@@ -128,10 +128,10 @@ contract GovNFT is ERC721Enumerable, ILayerZeroReceiver, MetaContext, IGovNFT {
         address _to,
         uint256[] memory tokenId
     ) public payable {
-        require(tokenId.length > 0, "Not bridging");
-        require(tokenId.length <= maxBridge, "Over max bridge");
+        require(tokenId.length > 0, "!bridging");
+        require(tokenId.length <= maxBridge, "!max");
         for (uint256 i=0; i<tokenId.length; i++) {
-            require(_msgSender() == ownerOf(tokenId[i]), "Not the owner");
+            require(_msgSender() == ownerOf(tokenId[i]), "!owner");
             // burn NFT
             _burn(tokenId[i]);
         }
@@ -154,7 +154,7 @@ contract GovNFT is ERC721Enumerable, ILayerZeroReceiver, MetaContext, IGovNFT {
         );
         require(
             msg.value >= messageFee,
-            "Must send enough value to cover messageFee"
+            "!messageFee"
         );
         endpoint.send{value: msg.value}(
             _dstChainId,
@@ -185,7 +185,7 @@ contract GovNFT is ERC721Enumerable, ILayerZeroReceiver, MetaContext, IGovNFT {
 
     function nonblockingLzReceive(uint16 _srcChainId, bytes calldata _srcAddress, uint64 _nonce, bytes calldata _payload) public {
         // only internal transaction
-        require(msg.sender == address(this), "NonblockingLzApp: caller must be app");
+        require(msg.sender == address(this), "NonblockingLzApp!app");
         _nonblockingLzReceive(_srcChainId, _srcAddress, _nonce, _payload);
     }
 
@@ -209,8 +209,8 @@ contract GovNFT is ERC721Enumerable, ILayerZeroReceiver, MetaContext, IGovNFT {
     function retryMessage(uint16 _srcChainId, bytes calldata _srcAddress, uint64 _nonce, bytes calldata _payload) public {
         // assert there is message to retry
         bytes32 payloadHash = failedMessages[_srcChainId][_srcAddress][_nonce];
-        require(payloadHash != bytes32(0), "NonblockingLzApp: no stored message");
-        require(keccak256(_payload) == payloadHash, "NonblockingLzApp: invalid payload");
+        require(payloadHash != bytes32(0), "NonblockingLzApp!stored");
+        require(keccak256(_payload) == payloadHash, "NonblockingLzApp!payload");
         // clear the stored message
         failedMessages[_srcChainId][_srcAddress][_nonce] = bytes32(0);
         // execute the message. revert if it fails again
@@ -225,7 +225,7 @@ contract GovNFT is ERC721Enumerable, ILayerZeroReceiver, MetaContext, IGovNFT {
         bytes calldata _payload,
         bool _payInZRO,
         bytes calldata _adapterParams
-    ) external view returns (uint256 nativeFee, uint256 zroFee) {
+    ) external view returns (uint256, uint256) {
         return
             endpoint.estimateFees(
                 _dstChainId,
@@ -336,7 +336,7 @@ contract GovNFT is ERC721Enumerable, ILayerZeroReceiver, MetaContext, IGovNFT {
     }
 
     // META-TX
-    function _msgSender() internal view override(Context, MetaContext) returns (address sender) {
+    function _msgSender() internal view override(Context, MetaContext) returns (address) {
         return MetaContext._msgSender();
     }
     function _msgData() internal view override(Context, MetaContext) returns (bytes calldata) {
