@@ -11,11 +11,11 @@ interface IPrice {
 
 struct PriceData {
     address provider;
+    bool isClosed;
     uint256 asset;
     uint256 price;
     uint256 spread;
     uint256 timestamp;
-    bool isClosed;
 }
 
 library TradingLibrary {
@@ -115,7 +115,9 @@ library TradingLibrary {
             if (answeredInRound >= roundId && updatedAt > 0 && assetChainlinkPriceInt != 0) {
                 uint256 assetChainlinkPrice = uint256(assetChainlinkPriceInt) * 10**(18 - IPrice(_chainlinkFeed).decimals());
                 require(
-                    _priceData.price < assetChainlinkPrice+assetChainlinkPrice*CHAINLINK_PRECISION/DIVISION_CONSTANT &&
+                    _priceData.price < assetChainlinkPrice+assetChainlinkPrice*CHAINLINK_PRECISION/DIVISION_CONSTANT , "!chainlinkPrice"
+                );
+                require(
                     _priceData.price > assetChainlinkPrice-assetChainlinkPrice*CHAINLINK_PRECISION/DIVISION_CONSTANT, "!chainlinkPrice"
                 );
             }

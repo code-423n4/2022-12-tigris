@@ -70,7 +70,7 @@ contract Lock is Ownable {
         claimGovFees();
 
         IERC20(_asset).transferFrom(msg.sender, address(this), _amount);
-        totalLocked[_asset] += _amount;
+        totalLocked[_asset] = totalLocked[_asset] + _amount;
         
         bondNFT.createLock( _asset, _amount, _period, msg.sender);
     }
@@ -88,7 +88,7 @@ contract Lock is Ownable {
     ) public {
         address _asset = claim(_id);
         IERC20(_asset).transferFrom(msg.sender, address(this), _amount);
-        totalLocked[_asset] += _amount;
+        totalLocked[_asset] = totalLocked[_asset] + _amount;
         bondNFT.extendLock(_id, _asset, _amount, _period, msg.sender);
     }
 
@@ -101,7 +101,7 @@ contract Lock is Ownable {
     ) public {
         claimGovFees();
         (uint256 amount, uint256 lockAmount, address asset, address _owner) = bondNFT.release(_id, msg.sender);
-        totalLocked[asset] -= lockAmount;
+        totalLocked[asset] = totalLocked[asset] - lockAmount;
         IERC20(asset).transfer(_owner, amount);
     }
 
@@ -111,10 +111,13 @@ contract Lock is Ownable {
     function claimGovFees() public {
         address[] memory assets = bondNFT.getAssets();
 
+        uint256 balanceBefore;
+        uint256 balanceAfter;
+
         for (uint256 i=0; i < assets.length; i++) {
-            uint256 balanceBefore = IERC20(assets[i]).balanceOf(address(this));
+            balanceBefore = IERC20(assets[i]).balanceOf(address(this));
             IGovNFT(govNFT).claim(assets[i]);
-            uint256 balanceAfter = IERC20(assets[i]).balanceOf(address(this));
+            balanceAfter = IERC20(assets[i]).balanceOf(address(this));
             if (!isApproved[assets[i]]) {
                 IERC20(assets[i]).approve(address(bondNFT), type(uint256).max);
                 isApproved[assets[i]] = true;

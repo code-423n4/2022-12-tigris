@@ -49,16 +49,19 @@ contract Position is ERC721Enumerable, MetaContext, IPosition {
         if (_trade.orderType > 0) return _trade;
         
         int256 _pendingFunding;
-        if (_trade.direction && longOi[_trade.asset][_trade.tigAsset] > 0) {
-            _pendingFunding = (int256(block.timestamp-lastUpdate[_trade.asset][_trade.tigAsset])*fundingDeltaPerSec[_trade.asset][_trade.tigAsset])*1e18/int256(longOi[_trade.asset][_trade.tigAsset]);
-            if (longOi[_trade.asset][_trade.tigAsset] > shortOi[_trade.asset][_trade.tigAsset]) {
+        uint256 _longOi = longOi[_trade.asset][_trade.tigAsset];
+        uint256 _shortOi = shortOi[_trade.asset][_trade.tigAsset];
+
+        if (_trade.direction && _longOi > 0) {
+            _pendingFunding = (int256(block.timestamp-lastUpdate[_trade.asset][_trade.tigAsset])*fundingDeltaPerSec[_trade.asset][_trade.tigAsset])*1e18/int256(_longOi);
+            if (_longOi > _shortOi) {
                 _pendingFunding = -_pendingFunding;
             } else {
                 _pendingFunding = _pendingFunding*int256(1e10-vaultFundingPercent[_trade.asset][_trade.tigAsset])/1e10;
             }
-        } else if (shortOi[_trade.asset][_trade.tigAsset] > 0) {
-            _pendingFunding = (int256(block.timestamp-lastUpdate[_trade.asset][_trade.tigAsset])*fundingDeltaPerSec[_trade.asset][_trade.tigAsset])*1e18/int256(shortOi[_trade.asset][_trade.tigAsset]);
-            if (shortOi[_trade.asset][_trade.tigAsset] > longOi[_trade.asset][_trade.tigAsset]) {
+        } else if (_shortOi > 0) {
+            _pendingFunding = (int256(block.timestamp-lastUpdate[_trade.asset][_trade.tigAsset])*fundingDeltaPerSec[_trade.asset][_trade.tigAsset])*1e18/int256(_shortOi);
+            if (_shortOi > _longOi) {
                 _pendingFunding = -_pendingFunding;
             } else {
                 _pendingFunding = _pendingFunding*int256(1e10-vaultFundingPercent[_trade.asset][_trade.tigAsset])/1e10;
@@ -97,24 +100,29 @@ contract Position is ERC721Enumerable, MetaContext, IPosition {
     * @param _vaultFundingPercent percent of earned funding going to the stablevault
     */
     function updateFunding(uint256 _asset, address _tigAsset, uint256 _longOi, uint256 _shortOi, uint256 _baseFundingRate, uint256 _vaultFundingPercent) external onlyMinter {
-        if(longOi[_asset][_tigAsset] < shortOi[_asset][_tigAsset]) {
-            if (longOi[_asset][_tigAsset] > 0) {
-                accInterestPerOi[_asset][_tigAsset][true] += ((int256(block.timestamp-lastUpdate[_asset][_tigAsset])*fundingDeltaPerSec[_asset][_tigAsset])*1e18/int256(longOi[_asset][_tigAsset]))*int256(1e10-vaultFundingPercent[_asset][_tigAsset])/1e10;
-            }
-            accInterestPerOi[_asset][_tigAsset][false] -= (int256(block.timestamp-lastUpdate[_asset][_tigAsset])*fundingDeltaPerSec[_asset][_tigAsset])*1e18/int256(shortOi[_asset][_tigAsset]);
+        uint256 _longOiAsset = longOi[_asset][_tigAsset];
+        uint256 _shortOiAsset = shortOi[_asset][_tigAsset];
+        uint256 _lastUpdate = lastUpdate[_asset][_tigAsset];
+        int256 _fundingDeltaPerSec = fundingDeltaPerSec[_asset][_tigAsset];
 
-        } else if(longOi[_asset][_tigAsset] > shortOi[_asset][_tigAsset]) {
-            accInterestPerOi[_asset][_tigAsset][true] -= (int256(block.timestamp-lastUpdate[_asset][_tigAsset])*fundingDeltaPerSec[_asset][_tigAsset])*1e18/int256(longOi[_asset][_tigAsset]);
-            if (shortOi[_asset][_tigAsset] > 0) {
-                accInterestPerOi[_asset][_tigAsset][false] += ((int256(block.timestamp-lastUpdate[_asset][_tigAsset])*fundingDeltaPerSec[_asset][_tigAsset])*1e18/int256(shortOi[_asset][_tigAsset]))*int256(1e10-vaultFundingPercent[_asset][_tigAsset])/1e10;
+        if(_longOiAsset < _shortOiAsset) {
+            if (_longOiAsset > 0) {
+                accInterestPerOi[_asset][_tigAsset][true] += ((int256(block.timestamp-_lastUpdate)*_fundingDeltaPerSec)*1e18/int256(_longOiAsset))*int256(1e10-vaultFundingPercent[_asset][_tigAsset])/1e10;
+            }
+            accInterestPerOi[_asset][_tigAsset][false] -= (int256(block.timestamp-_lastUpdate)*_fundingDeltaPerSec)*1e18/int256(_shortOiAsset);
+
+        } else if(_longOiAsset > _shortOiAsset) {
+            accInterestPerOi[_asset][_tigAsset][true] -= (int256(block.timestamp-_lastUpdate)*_fundingDeltaPerSec)*1e18/int256(_longOiAsset);
+            if (_shortOiAsset > 0) {
+                accInterestPerOi[_asset][_tigAsset][false] += ((int256(block.timestamp-_lastUpdate)*_fundingDeltaPerSec)*1e18/int256(_shortOiAsset))*int256(1e10-vaultFundingPercent[_asset][_tigAsset])/1e10;
             }
         }
         lastUpdate[_asset][_tigAsset] = block.timestamp;
         int256 _oiDelta;
         if (_longOi > _shortOi) {
-            _oiDelta = int256(_longOi)-int256(_shortOi);
+            unchecked { _oiDelta = int256(_longOi)-int256(_shortOi); }
         } else {
-            _oiDelta = int256(_shortOi)-int256(_longOi);
+            unchecked { _oiDelta = int256(_shortOi)-int256(_longOi); }
         }
         
         fundingDeltaPerSec[_asset][_tigAsset] = (_oiDelta*int256(_baseFundingRate)/int256(DIVISION_CONSTANT))/31536000;
@@ -184,7 +192,7 @@ contract Position is ERC721Enumerable, MetaContext, IPosition {
         _assetOpenPositions[_asset].push(_id);
         _assetOpenPositionsIndexes[_asset][_id] = _assetOpenPositions[_asset].length-1;
 
-        initId[_id] = accInterestPerOi[_trade.asset][_trade.tigAsset][_trade.direction]*int256(_trade.margin*_trade.leverage/1e18)/1e18;
+        initId[_id] = accInterestPerOi[_asset][_trade.tigAsset][_trade.direction]*int256(_newMargin*_trade.leverage/1e18)/1e18;
     }
 
     /**
@@ -317,7 +325,7 @@ contract Position is ERC721Enumerable, MetaContext, IPosition {
     }
 
     // META-TX
-    function _msgSender() internal view override(Context, MetaContext) returns (address sender) {
+    function _msgSender() internal view override(Context, MetaContext) returns (address) {
         return MetaContext._msgSender();
     }
     function _msgData() internal view override(Context, MetaContext) returns (bytes calldata) {
