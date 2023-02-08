@@ -304,26 +304,24 @@ contract Trading is MetaContext, ITrading {
             _trader
         );
         position.setAccInterest(_id);
-        unchecked {
-            uint256 _positionSize = (_addMargin - _fee) * _trade.leverage / 1e18;
-            if (_trade.direction) {
-                tradingExtension.modifyLongOi(_trade.asset, _trade.tigAsset, true, _positionSize);
-            } else {
-                tradingExtension.modifyShortOi(_trade.asset, _trade.tigAsset, true, _positionSize);     
-            }
-            _updateFunding(_trade.asset, _trade.tigAsset);
-            _addMargin -= _fee;
-            uint256 _newMargin = _trade.margin + _addMargin;
-            uint256 _newPrice = _trade.price * _price * _newMargin /  (_trade.margin * _price + _addMargin * _trade.price);
-
-            position.addToPosition(
-                _trade.id,
-                _newMargin,
-                _newPrice
-            );
-            
-            emit AddToPosition(_trade.id, _newMargin, _newPrice, _trade.trader);
+        uint256 _positionSize = (_addMargin - _fee) * _trade.leverage / 1e18;
+        if (_trade.direction) {
+            tradingExtension.modifyLongOi(_trade.asset, _trade.tigAsset, true, _positionSize);
+        } else {
+            tradingExtension.modifyShortOi(_trade.asset, _trade.tigAsset, true, _positionSize);     
         }
+        _updateFunding(_trade.asset, _trade.tigAsset);
+        _addMargin -= _fee;
+        uint256 _newMargin = _trade.margin + _addMargin;
+        uint256 _newPrice = _trade.price * _price * _newMargin /  (_trade.margin * _price + _addMargin * _trade.price);
+
+        position.addToPosition(
+            _trade.id,
+            _newMargin,
+            _newPrice
+        );
+        
+        emit AddToPosition(_trade.id, _newMargin, _newPrice, _trade.trader);
     }
 
     /**
@@ -620,7 +618,8 @@ contract Trading is MetaContext, ITrading {
             _proxy,
             _timestamp
         );
-        payable(_proxy).transfer(msg.value);
+        (bool sent, bytes memory data) = payable(_proxy).call{value: msg.value}("");
+        require(sent, "Failed to send");
     }
 
     // ===== INTERNAL FUNCTIONS =====
@@ -668,9 +667,9 @@ contract Trading is MetaContext, ITrading {
     }
 
     /**
-     * @dev handle stablevault deposits for different trading functions
+     * @dev handle stableVault deposits for different trading functions
      * @param _tigAsset tigAsset token address
-     * @param _marginAsset token being deposited into stablevault
+     * @param _marginAsset token being deposited into stableVault
      * @param _margin amount being deposited
      * @param _stableVault StableVault address
      * @param _permitData Data for approval via permit
@@ -698,7 +697,7 @@ contract Trading is MetaContext, ITrading {
     }
 
     /**
-     * @dev handle stablevault withdrawals for different trading functions
+     * @dev handle stableVault withdrawals for different trading functions
      * @param _trade Position info
      * @param _stableVault StableVault address
      * @param _outputToken Output token address
@@ -849,7 +848,6 @@ contract Trading is MetaContext, ITrading {
         payout_ = _payout - (_daoFeesPaid + _referralFeesPaid) - _burnFeesPaid - _botFeesPaid;
         IStable(_tigAsset).mintFor(address(this), _daoFeesPaid);
         gov.distribute(_tigAsset, _daoFeesPaid);
-        return payout_;
     }
 
     /**
@@ -911,7 +909,7 @@ contract Trading is MetaContext, ITrading {
     }
 
     /**
-     * @dev Check that the stablevault input is whitelisted and the margin asset is whitelisted in the vault
+     * @dev Check that the stableVault input is whitelisted and the margin asset is whitelisted in the vault
      * @param _stableVault StableVault address
      * @param _token Margin asset token address
      */
@@ -947,7 +945,7 @@ contract Trading is MetaContext, ITrading {
     }
 
     /**
-     * @dev Whitelists a stablevault contract address
+     * @dev Whitelists a stableVault contract address
      * @param _stableVault StableVault address
      * @param _bool true if allowed
      */

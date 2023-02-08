@@ -30,9 +30,7 @@ contract PairsContract is Ownable, IPairsContract {
      * @param _asset index of the requested asset
      * @param _feed contract address of the Chainlink price feed
      */
-    function setAssetChainlinkFeed(uint256 _asset, address _feed) external onlyOwner {
-        bytes memory _name  = bytes(_idToAsset[_asset].name);
-        require(_name.length > 0, "!Asset");
+    function setAssetChainlinkFeed(uint256 _asset, address _feed) external onlyOwner exists(_asset) {
         _idToAsset[_asset].chainlinkFeed = _feed;
     }
 
@@ -72,9 +70,7 @@ contract PairsContract is Ownable, IPairsContract {
      * @param _minLeverage minimum leverage allowed
      * @param _maxLeverage Maximum leverage allowed
      */
-    function updateAssetLeverage(uint256 _asset, uint256 _minLeverage, uint256 _maxLeverage) external onlyOwner {
-        bytes memory _name  = bytes(_idToAsset[_asset].name);
-        require(_name.length > 0, "!Asset");
+    function updateAssetLeverage(uint256 _asset, uint256 _minLeverage, uint256 _maxLeverage) external onlyOwner exists(_asset) {
 
         if (_maxLeverage > 0) {
             _idToAsset[_asset].maxLeverage = _maxLeverage;
@@ -91,9 +87,7 @@ contract PairsContract is Ownable, IPairsContract {
      * @param _asset index of the asset
      * @param _baseFundingRate the rate to set
      */
-    function setAssetBaseFundingRate(uint256 _asset, uint256 _baseFundingRate) external onlyOwner {
-        bytes memory _name  = bytes(_idToAsset[_asset].name);
-        require(_name.length > 0, "!Asset");
+    function setAssetBaseFundingRate(uint256 _asset, uint256 _baseFundingRate) external onlyOwner exists(_asset) {
         require(_baseFundingRate <= maxBaseFundingRate, "baseFundingRate too high");
         _idToAsset[_asset].baseFundingRate = _baseFundingRate;
     }
@@ -103,9 +97,7 @@ contract PairsContract is Ownable, IPairsContract {
      * @param _asset index of the asset
      * @param _feeMultiplier the fee multiplier
      */
-    function updateAssetFeeMultiplier(uint256 _asset, uint256 _feeMultiplier) external onlyOwner {
-        bytes memory _name  = bytes(_idToAsset[_asset].name);
-        require(_name.length > 0, "!Asset");
+    function updateAssetFeeMultiplier(uint256 _asset, uint256 _feeMultiplier) external onlyOwner exists(_asset) {
         _idToAsset[_asset].feeMultiplier = _feeMultiplier;
     }
 
@@ -114,9 +106,7 @@ contract PairsContract is Ownable, IPairsContract {
      * @param _asset index of the asset
      * @param _isPaused paused if true
      */
-    function pauseAsset(uint256 _asset, bool _isPaused) external onlyOwner {
-        bytes memory _name  = bytes(_idToAsset[_asset].name);
-        require(_name.length > 0, "!Asset");
+    function pauseAsset(uint256 _asset, bool _isPaused) external onlyOwner exists(_asset) {
         allowedAsset[_asset] = !_isPaused;
     }
 
@@ -138,9 +128,7 @@ contract PairsContract is Ownable, IPairsContract {
      * @param _tigAsset contract address of the tigAsset
      * @param _maxOi Maximum open interest value per side
      */
-    function setMaxOi(uint256 _asset, address _tigAsset, uint256 _maxOi) external onlyOwner {
-        bytes memory _name  = bytes(_idToAsset[_asset].name);
-        require(_name.length > 0, "!Asset");
+    function setMaxOi(uint256 _asset, address _tigAsset, uint256 _maxOi) external onlyOwner exists(_asset) {
         _idToOi[_asset][_tigAsset].maxOi = _maxOi;
     }
 
@@ -190,6 +178,12 @@ contract PairsContract is Ownable, IPairsContract {
 
     modifier onlyProtocol() {
         require(_msgSender() == address(protocol), "!Protocol");
+        _;
+    }
+
+    modifier exists(uint256 _asset){
+        bytes memory _name  = bytes(_idToAsset[_asset].name);
+        require(_name.length > 0, "!Asset");
         _;
     }
 

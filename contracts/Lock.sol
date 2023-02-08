@@ -8,8 +8,8 @@ import "./interfaces/IGovNFT.sol";
 
 contract Lock is Ownable {
 
-    uint256 public constant minPeriod = 7;
-    uint256 public constant maxPeriod = 365;
+    uint256 public constant MIN_PERIOD = 7;
+    uint256 public constant MAX_PERIOD = 365;
 
     IBondNFT public immutable bondNFT;
     IGovNFT public immutable govNFT;
@@ -22,6 +22,9 @@ contract Lock is Ownable {
         address _bondNFTAddress,
         address _govNFT
     ) {
+        require(_govNFT != address(0), "!gov");
+        require(_bondNFTAddress != address(0), "!bond");
+
         bondNFT = IBondNFT(_bondNFTAddress);
         govNFT = IGovNFT(_govNFT);
     }
@@ -63,8 +66,8 @@ contract Lock is Ownable {
         uint256 _amount,
         uint256 _period
     ) public {
-        require(_period <= maxPeriod, "MAX PERIOD");
-        require(_period >= minPeriod, "MIN PERIOD");
+        require(_period <= MAX_PERIOD, "MAX PERIOD");
+        require(_period >= MIN_PERIOD, "MIN PERIOD");
         require(allowedAssets[_asset], "!asset");
 
         claimGovFees();
@@ -139,7 +142,7 @@ contract Lock is Ownable {
     }
 
     /**
-     * @notice Owner can retreive Gov NFTs
+     * @notice Owner can retrieve Gov NFTs
      * @param _ids array of gov nft ids
      */
     function sendNFTs(

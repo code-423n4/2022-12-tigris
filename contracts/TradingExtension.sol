@@ -87,7 +87,7 @@ contract TradingExtension is Ownable{
     * @notice limitClose helper
     * @dev only callable by trading contract
     * @param _id id of the position NFT
-    * @param _tp true if long, else short
+    * @param _tp true if takeprofit, else stoploss
     * @param _priceData price data object came from the price oracle
     * @param _signature to verify the oracle
     * @return _limitPrice price of sl or tp returned from positions contract

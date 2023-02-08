@@ -12,7 +12,7 @@ import "./utils/ExcessivelySafeCall.sol";
 contract GovNFTBridged is ERC721Enumerable, ILayerZeroReceiver, MetaContext, IGovNFT {
     using ExcessivelySafeCall for address;
 
-    uint256 public gas = 150000;
+    uint256 public gas = 150_000;
     string public baseURI;
     uint256 public maxBridge = 20;
     ILayerZeroEndpoint public endpoint;
@@ -47,7 +47,7 @@ contract GovNFTBridged is ERC721Enumerable, ILayerZeroReceiver, MetaContext, IGo
     }
 
     function bridgeMint(address to, uint256 tokenId) public {
-        require(msg.sender == address(this) || _msgSender() == owner(), "NotBridge");
+        require(msg.sender == address(this), "NotBridge");
         require(tokenId <= 10000 && tokenId != 0, "BadID");
         for (uint256 i=0; i<assetsLength(); i++) {
             userPaid[to][assets[i]] += accRewardsPerNFT[assets[i]];
@@ -245,7 +245,7 @@ contract GovNFTBridged is ERC721Enumerable, ILayerZeroReceiver, MetaContext, IGo
     }
 
     function distribute(address _tigAsset, uint256 _amount) external {
-        if (assets.length == 0 || assets[assetsIndex[_tigAsset]] == address(0) || totalSupply() == 0 || !_allowedAsset[_tigAsset]) return;
+        if (assets.length == 0 || assets[assetsIndex[_tigAsset]] != _tigAsset  || totalSupply() == 0 || !_allowedAsset[_tigAsset]) return;
         try IERC20(_tigAsset).transferFrom(_msgSender(), address(this), _amount) {
             accRewardsPerNFT[_tigAsset] += _amount/totalSupply();
         } catch {

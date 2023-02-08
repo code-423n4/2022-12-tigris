@@ -97,7 +97,7 @@ contract Position is ERC721Enumerable, MetaContext, IPosition {
     * @param _longOi long open interest
     * @param _shortOi short open interest
     * @param _baseFundingRate base funding rate of a pair
-    * @param _vaultFundingPercent percent of earned funding going to the stablevault
+    * @param _vaultFundingPercent percent of earned funding going to the stableVault
     */
     function updateFunding(uint256 _asset, address _tigAsset, uint256 _longOi, uint256 _shortOi, uint256 _baseFundingRate, uint256 _vaultFundingPercent) external onlyMinter {
         uint256 _longOiAsset = longOi[_asset][_tigAsset];
@@ -125,7 +125,7 @@ contract Position is ERC721Enumerable, MetaContext, IPosition {
             unchecked { _oiDelta = int256(_shortOi)-int256(_longOi); }
         }
         
-        fundingDeltaPerSec[_asset][_tigAsset] = (_oiDelta*int256(_baseFundingRate)/int256(DIVISION_CONSTANT))/31536000;
+        fundingDeltaPerSec[_asset][_tigAsset] = (_oiDelta*int256(_baseFundingRate)/int256(DIVISION_CONSTANT))/31_536_000;
         longOi[_asset][_tigAsset] = _longOi;
         shortOi[_asset][_tigAsset] = _shortOi;
         vaultFundingPercent[_asset][_tigAsset] = _vaultFundingPercent;
