@@ -130,9 +130,9 @@ contract Trading is MetaContext, ITrading {
     uint256 public maxWinPercent;
     uint256 public vaultFundingPercent;
 
-    IPairsContract private immutable pairsContract;
-    IPosition private immutable position;
-    IGovNFT private immutable gov;
+    IPairsContract private pairsContract;
+    IPosition private position;
+    IGovNFT private gov;
     ITradingExtension private tradingExtension;
 
     struct Delay {
