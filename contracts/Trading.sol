@@ -618,7 +618,7 @@ contract Trading is MetaContext, ITrading {
             _proxy,
             _timestamp
         );
-        (bool sent, bytes memory data) = payable(_proxy).call{value: msg.value}("");
+        (bool sent,) = payable(_proxy).call{value: msg.value}("");
         require(sent, "Failed to send");
     }
 
@@ -915,7 +915,7 @@ contract Trading is MetaContext, ITrading {
      */
     function _checkVault(address _stableVault, address _token) internal view {
         if (!allowedVault[_stableVault]) revert NotVault();
-        if (_token != IStableVault(_stableVault).stable() || !IStableVault(_stableVault).allowed(_token)) revert NotAllowedInVault();
+        if (_token != IStableVault(_stableVault).stable() && !IStableVault(_stableVault).allowed(_token)) revert NotAllowedInVault();
     }
 
     /**
@@ -925,7 +925,7 @@ contract Trading is MetaContext, ITrading {
     function _validateProxy(address _trader) internal view {
         if (_trader != _msgSender()) {
             Proxy memory _proxy = proxyApprovals[_trader];
-            if (_proxy.proxy != _msgSender() || _proxy.time >= block.timestamp) revert NotProxy();
+            if (_proxy.proxy != _msgSender() || _proxy.time < block.timestamp) revert NotProxy();
         }
     }
 

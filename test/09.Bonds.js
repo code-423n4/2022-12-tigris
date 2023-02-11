@@ -137,7 +137,7 @@ describe("Bonds", function () {
       expect(await bond.balanceOf(user.address)).to.be.equals(1);
       expect((await bond.balanceIds(owner.address)).toString()).to.be.equals('1');
       expect((await bond.balanceIds(user.address)).toString()).to.be.equals('2');
-      let [id, _owner, asset, amount, mintEpoch, mintTime, expireEpoch, pending, shares, period, expired] = await bond.idToBond(1);
+      let [id, _owner, asset, expired, amount, mintEpoch, mintTime, expireEpoch, pending, shares, period] = await bond.idToBond(1);
       expect(id).to.be.equals(1);
       expect(_owner).to.be.equals(owner.address);
       expect(asset).to.be.equals(StableToken.address);
@@ -149,7 +149,7 @@ describe("Bonds", function () {
       expect(period).to.be.equals(365);
       expect(expired).to.be.equals(false);
 
-      [id, _owner, asset, amount, mintEpoch, mintTime, expireEpoch, pending, shares, period, expired] = await bond.idToBond(2);
+      [id, _owner, asset, expired, amount, mintEpoch, mintTime, expireEpoch, pending, shares, period] = await bond.idToBond(2);
       expect(id).to.be.equals(2);
       expect(_owner).to.be.equals(user.address);
       expect(asset).to.be.equals(StableToken.address);
@@ -237,7 +237,7 @@ describe("Bonds", function () {
       await stabletoken.connect(owner).mintFor(owner.address, ethers.utils.parseEther("1000"));
       await bond.distribute(stabletoken.address, ethers.utils.parseEther("1000"));
 
-      [,,,,,, expireEpoch,,,,] = await bond.idToBond(2);
+      [,,,,,,, expireEpoch,,,] = await bond.idToBond(2);
       expect(await bond.epoch(stabletoken.address)).to.be.equals(expireEpoch);
       expect(await bond.isExpired(1)).to.be.equals(false);
       expect(await bond.isExpired(2)).to.be.equals(true);
@@ -295,21 +295,21 @@ describe("Bonds", function () {
 
       await bond.distribute(stabletoken.address, 0);
 
-      [,,,,,,,pending,,,] = await bond.idToBond(1);
+      [,,,,,,,,pending,,] = await bond.idToBond(1);
       expect(pending).to.be.equals("499999999999999999986");
-      [,,,,,,,pending,,,] = await bond.idToBond(2);
+      [,,,,,,,,pending,,] = await bond.idToBond(2);
       expect(pending).to.be.equals("499999999999999999986");
 
       await lock.connect(user).release(2);
 
       expect(await stabletoken.balanceOf(user.address)).to.be.equals("1499999999999999999986");
-      [,,,,,,,pending,,,] = await bond.idToBond(1);
+      [,,,,,,,,pending,,] = await bond.idToBond(1);
       expect(pending).to.be.equals("499999999999999999986");
 
       await network.provider.send("evm_increaseTime", [8640000]); // Skip 100 days
       await network.provider.send("evm_mine");
 
-      [,,,,,,,pending,,,] = await bond.idToBond(1);
+      [,,,,,,,,pending,,] = await bond.idToBond(1);
       expect(pending).to.be.equals("499999999999999999986");
 
       await lock.connect(owner).release(1);
@@ -385,7 +385,7 @@ describe("Bonds", function () {
       await network.provider.send("evm_increaseTime", [864000]); // Skip 10 days
       await network.provider.send("evm_mine");
 
-      [id, _owner, asset, amount, mintEpoch, mintTime, expireEpoch, pending, shares, period, expired] = await bond.idToBond(1);
+      [id, _owner, asset, expired, amount, mintEpoch, mintTime, expireEpoch, pending, shares, period] = await bond.idToBond(1);
       expect(id).to.be.equals(1);
       expect(_owner).to.be.equals(user.address);
       expect(asset).to.be.equals(StableToken.address);
@@ -399,7 +399,7 @@ describe("Bonds", function () {
 
       await lock.connect(user).extendLock(1, 0, 0);
 
-      [id, _owner, asset, amount, mintEpoch, mintTime, expireEpoch, pending, shares, period, expired] = await bond.idToBond(1);
+      [id, _owner, asset, expired, amount, mintEpoch, mintTime, expireEpoch, pending, shares, period] = await bond.idToBond(1);
       expect(await bond.totalShares(stabletoken.address)).to.be.equals(shares);
       expect(id).to.be.equals(1);
       expect(_owner).to.be.equals(user.address);
@@ -419,7 +419,7 @@ describe("Bonds", function () {
       await network.provider.send("evm_increaseTime", [864000]); // Skip 10 days
       await network.provider.send("evm_mine");
 
-      [id, _owner, asset, amount, mintEpoch, mintTime, expireEpoch, pending, shares, period, expired] = await bond.idToBond(1);
+      [id, _owner, asset, expired, amount, mintEpoch, mintTime, expireEpoch, pending, shares, period] = await bond.idToBond(1);
       expect(await bond.totalShares(stabletoken.address)).to.be.equals("5479452054794520547");
       expect(id).to.be.equals(1);
       expect(_owner).to.be.equals(user.address);
@@ -435,7 +435,7 @@ describe("Bonds", function () {
       await stabletoken.connect(owner).mintFor(user.address, ethers.utils.parseEther("100"));
       await lock.connect(user).extendLock(1, ethers.utils.parseEther("100"), 10);
 
-      [id, _owner, asset, amount, mintEpoch, mintTime, expireEpoch, pending, shares, period, expired] = await bond.idToBond(1);
+      [id, _owner, asset, expired, amount, mintEpoch, mintTime, expireEpoch, pending, shares, period] = await bond.idToBond(1);
       expect(await bond.totalShares(stabletoken.address)).to.be.equals("10958904109589041095");
       expect(id).to.be.equals(1);
       expect(_owner).to.be.equals(user.address);

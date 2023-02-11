@@ -170,11 +170,11 @@ describe("Trading", function () {
   describe("Signature verification", function () {
     it("Valid signature should work as expected", async function () {
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("30000"), parseEther("10000"), ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -187,11 +187,11 @@ describe("Trading", function () {
     });
     it("Using an expired signature should revert", async function () {
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("30000"), parseEther("10000"), ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -206,11 +206,11 @@ describe("Trading", function () {
     });
     it("Using an invalid signature should revert", async function () {
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("30000"), parseEther("10000"), ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 9999999999999, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 9999999999999]
         )
       );
       let sig = await node.signMessage(
@@ -223,11 +223,11 @@ describe("Trading", function () {
     });
     it("Using a signature from a non-node address should revert", async function () {
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("30000"), parseEther("10000"), ethers.constants.HashZero];
-      let PriceData = [user.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [user.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [user.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [user.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await user.signMessage(
@@ -240,11 +240,11 @@ describe("Trading", function () {
     });
     it("Using a future signature should revert", async function () {
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("30000"), parseEther("10000"), ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 3000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 3000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 3000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 3000000000]
         )
       );
       let sig = await node.signMessage(
@@ -257,11 +257,11 @@ describe("Trading", function () {
     });
     it("Trying to trade a closed market should revert", async function () {
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("30000"), parseEther("10000"), ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, true];
+      let PriceData = [node.address, true, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, true]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, true, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -274,11 +274,11 @@ describe("Trading", function () {
     });
     it("Trying to trade with asset that doesn't match signed message should revert", async function () {
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 1, true, parseEther("30000"), parseEther("10000"), ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -291,11 +291,11 @@ describe("Trading", function () {
     });
     it("Trying to trade an asset with zero price should revert", async function () {
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("30000"), parseEther("10000"), ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("0"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("0"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("0"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("0"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -310,11 +310,11 @@ describe("Trading", function () {
   describe("Market trading", function () {
     it("Opening a market long with a bad SL should revert", async function () {
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("30000"), parseEther("30000")/* SL>price*/, ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -322,16 +322,16 @@ describe("Trading", function () {
       );
       
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
-      await expect(trading.connect(owner).initiateMarketOrder(TradeInfo, PriceData, sig, PermitData, owner.address)).to.be.revertedWith("3");
+      await expect(trading.connect(owner).initiateMarketOrder(TradeInfo, PriceData, sig, PermitData, owner.address)).to.be.revertedWith("BadStopLoss()");
       expect(await position.assetOpenPositionsLength(0)).to.equal(0); // Trade not opened      
     });
     it("Opening a market short with a bad SL should revert", async function () {
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, false, parseEther("10000"), parseEther("10000")/* SL<price*/, ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -339,16 +339,16 @@ describe("Trading", function () {
       );
       
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
-      await expect(trading.connect(owner).initiateMarketOrder(TradeInfo, PriceData, sig, PermitData, owner.address)).to.be.revertedWith("3");
+      await expect(trading.connect(owner).initiateMarketOrder(TradeInfo, PriceData, sig, PermitData, owner.address)).to.be.revertedWith("BadStopLoss()");
       expect(await position.assetOpenPositionsLength(0)).to.equal(0); // Trade not opened      
     });
     it("Opening a market short with no SL should open position", async function () {
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, false, parseEther("10000"), parseEther("0")/* SL = 0*/, ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -362,11 +362,11 @@ describe("Trading", function () {
     it("Opening a position while trading is paused should revert", async function () {
       await tradingExtension.connect(owner).setPaused(true);
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, false, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -379,11 +379,11 @@ describe("Trading", function () {
     });
     it("Opening a position with < min leverage should revert", async function () {
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("0.5"), 0, false, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -396,11 +396,11 @@ describe("Trading", function () {
     });
     it("Opening a position with > min leverage should revert", async function () {
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("1000"), 0, false, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -414,11 +414,11 @@ describe("Trading", function () {
     it("Opening a position with a non-allowed margin asset should revert", async function () {
       await tradingExtension.connect(owner).setAllowedMargin(StableToken.address, false);
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, false, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -431,11 +431,11 @@ describe("Trading", function () {
     });
     it("Opening a position on a non-allowed pair should revert", async function () {
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 99, false, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -448,11 +448,11 @@ describe("Trading", function () {
     });
     it("Opening a position with < min position size should revert", async function () {
       let TradeInfo = [parseEther("0.1"), MockDAI.address, StableVault.address, parseEther("2"), 0, false, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -466,11 +466,11 @@ describe("Trading", function () {
     it("Opening a position with an unapproved stablevault should revert", async function () {
       await trading.connect(owner).setAllowedVault(StableVault.address, false);
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, false, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -478,34 +478,34 @@ describe("Trading", function () {
       );
       
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
-      await expect(trading.connect(owner).initiateMarketOrder(TradeInfo, PriceData, sig, PermitData, owner.address)).to.be.revertedWith("Unapproved stablevault");
+      await expect(trading.connect(owner).initiateMarketOrder(TradeInfo, PriceData, sig, PermitData, owner.address)).to.be.revertedWith("NotVault()");
       expect(await position.assetOpenPositionsLength(0)).to.equal(0); // Trade not opened
     });
     it("Trading should revert if margin asset isn't listed in stablevault", async function () {
       await stablevault.connect(owner).delistToken(MockDAI.address);
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, false, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
         Buffer.from(openMessage.substring(2), 'hex')
       );
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
-      await expect(trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address)).to.be.revertedWith("Token not approved in vault");
+      await expect(trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address)).to.be.revertedWith("NotAllowedInVault()");
     });
     it("Opening a position with a bad stablevault should revert", async function () {
       await badstablevault.connect(owner).listToken(MockDAI.address);
       await trading.connect(owner).setAllowedVault(badstablevault.address, true);
       let TradeInfo = [parseEther("1000"), MockDAI.address, badstablevault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -520,29 +520,29 @@ describe("Trading", function () {
       await stabletoken.connect(owner).setMinter(owner.address, true);
       await stabletoken.connect(owner).mintFor(owner.address, parseEther("1000"));
       let TradeInfo = [parseEther("1000"), StableToken.address, StableVault.address, parseEther("10"), 0, false, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
         Buffer.from(message.substring(2), 'hex')
       );
       
-      let PermitData = [0, 0, 0, ethers.constants.HashZero, ethers.constants.HashZero, false];
+      let PermitData = [0, 0, 0, ethers.constants.HashZero, ethers.constants.HashZero];
       await trading.connect(owner).initiateMarketOrder(TradeInfo, PriceData, sig, PermitData, owner.address);
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Trade has opened
       expect(await stabletoken.balanceOf(owner.address)).to.equal(parseEther("0")); // Should no tigAsset left
     });
     it("Closing over 100% should revert", async function () {
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -555,11 +555,11 @@ describe("Trading", function () {
     });
     it("Closing 0% should revert", async function () {
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -574,11 +574,11 @@ describe("Trading", function () {
       await badstablevault.connect(owner).listToken(MockDAI.address);
       await trading.connect(owner).setAllowedVault(badstablevault.address, true);
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -595,26 +595,26 @@ describe("Trading", function () {
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
       await trading.connect(owner).initiateLimitOrder(TradeInfo, 1, parseEther("20000"), PermitData, owner.address);
 
-      let PriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
         Buffer.from(message.substring(2), 'hex')
       );
             
-      await expect(trading.connect(owner).initiateCloseOrder(1, 1e10, PriceData, sig, StableVault.address, StableToken.address, owner.address)).to.be.revertedWith("4");
+      await expect(trading.connect(owner).initiateCloseOrder(1, 1e10, PriceData, sig, StableVault.address, StableToken.address, owner.address)).to.be.revertedWith("IsLimit()");
     });
     it("Closing someone else's position should revert", async function () {
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -623,7 +623,7 @@ describe("Trading", function () {
       
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
       await trading.connect(owner).initiateMarketOrder(TradeInfo, PriceData, sig, PermitData, owner.address);
-      await expect(trading.connect(user).initiateCloseOrder(1, 1e10, PriceData, sig, StableVault.address, StableToken.address, user.address)).to.be.revertedWith("2");
+      await expect(trading.connect(user).initiateCloseOrder(1, 1e10, PriceData, sig, StableVault.address, StableToken.address, user.address)).to.be.revertedWith("NotOwner()");
     });
     it("Partially closing a position should revert if position size would go below minimum position size, fully closing should not revert", async function () {
       await tradingExtension.connect(owner).setMinPositionSize(StableToken.address, parseEther("3000"));
@@ -631,11 +631,11 @@ describe("Trading", function () {
       await trading.connect(owner).setFees(true,0,0,0,0,0); // Easier to calculate without fees
       await trading.connect(owner).setFees(false,0,0,0,0,0); // Easier to calculate without fees
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -647,18 +647,18 @@ describe("Trading", function () {
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Trade has opened
       expect(await stabletoken.balanceOf(owner.address)).to.equal(0); // Starts with zero balance
 
-      let closePriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false]; // Price 10% higher
+      let closePriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000]; // Price 10% higher
       let closeMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let closeSig = await node.signMessage(
         Buffer.from(closeMessage.substring(2), 'hex')
       );
       
-      await expect(trading.connect(owner).initiateCloseOrder(1, 5e9, closePriceData, closeSig, StableVault.address, StableToken.address, owner.address)).to.be.revertedWith("!size");
+      await expect(trading.connect(owner).initiateCloseOrder(1, 5e9, closePriceData, closeSig, StableVault.address, StableToken.address, owner.address)).to.be.revertedWith("BelowMinPositionSize()");
       await trading.connect(owner).initiateCloseOrder(1, 1e10, closePriceData, closeSig, StableVault.address, StableToken.address, owner.address);
       expect(await position.assetOpenPositionsLength(0)).to.equal(0); // Trade has closed
     });
@@ -667,11 +667,11 @@ describe("Trading", function () {
       await trading.connect(owner).setFees(true,0,0,0,0,0); // Easier to calculate without fees
       await trading.connect(owner).setFees(false,0,0,0,0,0); // Easier to calculate without fees
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -683,11 +683,11 @@ describe("Trading", function () {
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Trade has opened
       expect(await stabletoken.balanceOf(owner.address)).to.equal(0); // Starts with zero balance
 
-      let closePriceData = [node.address, 0, parseEther("11000"), 0, 2000000000, false]; // Price 10% higher
+      let closePriceData = [node.address, false, 0, parseEther("11000"), 0, 2000000000]; // Price 10% higher
       let closeMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("11000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("11000"), 0, 2000000000]
         )
       );
       let closeSig = await node.signMessage(
@@ -706,11 +706,11 @@ describe("Trading", function () {
       await trading.connect(owner).setFees(true,0,0,0,0,0); // Easier to calculate without fees
       await trading.connect(owner).setFees(false,0,0,0,0,0); // Easier to calculate without fees
       let TradeInfo = [parseEther("1000"), MockUSDC.address, StableVault.address, parseEther("5"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -722,11 +722,11 @@ describe("Trading", function () {
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Trade has opened
       expect(await stabletoken.balanceOf(owner.address)).to.equal(0); // Starts with zero balance
 
-      let closePriceData = [node.address, 0, parseEther("9000"), 0, 2000000000, false]; // Price down 10%
+      let closePriceData = [node.address, false, 0, parseEther("9000"), 0, 2000000000]; // Price down 10%
       let closeMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("9000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("9000"), 0, 2000000000]
         )
       );
       let closeSig = await node.signMessage(
@@ -741,11 +741,11 @@ describe("Trading", function () {
       await trading.connect(owner).setFees(true,0,0,0,0,0); // Easier to calculate without fees
       await trading.connect(owner).setFees(false,0,0,0,0,0); // Easier to calculate without fees
       let TradeInfo = [parseEther("1000"), MockUSDC.address, StableVault.address, parseEther("5"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -757,11 +757,11 @@ describe("Trading", function () {
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Trade has opened
       expect(await mockusdc.balanceOf(owner.address)).to.equal(0); // Starts with zero balance
 
-      let closePriceData = [node.address, 0, parseEther("9000"), 0, 2000000000, false]; // Price down 10%
+      let closePriceData = [node.address, false, 0, parseEther("9000"), 0, 2000000000]; // Price down 10%
       let closeMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("9000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("9000"), 0, 2000000000]
         )
       );
       let closeSig = await node.signMessage(
@@ -784,11 +784,11 @@ describe("Trading", function () {
       expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
 
       // Execute limit order
-      let PriceData = [node.address, 0, parseEther("21000"), 0, 2000000000, false]; // 0% spread
+      let PriceData = [node.address, false, 0, parseEther("21000"), 0, 2000000000]; // 0% spread
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("21000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("21000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -809,11 +809,11 @@ describe("Trading", function () {
       expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
 
       // Execute limit order
-      let PriceData = [node.address, 0, parseEther("19000"), 0, 2000000000, false]; // 0% spread
+      let PriceData = [node.address, false, 0, parseEther("19000"), 0, 2000000000]; // 0% spread
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("19000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("19000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -834,11 +834,11 @@ describe("Trading", function () {
       expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
 
       // Execute limit order
-      let PriceData = [node.address, 0, parseEther("10000"), 10000000, 2000000000, false]; // 0.1% spread
+      let PriceData = [node.address, false, 0, parseEther("10000"), 10000000, 2000000000]; // 0.1% spread
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 10000000, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 10000000, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -867,11 +867,11 @@ describe("Trading", function () {
       await network.provider.send("evm_mine");
 
       // Execute limit order
-      let PriceData = [node.address, 0, parseEther("10000"), 10000000, 2000000000, false]; // 0.1% spread
+      let PriceData = [node.address, false, 0, parseEther("10000"), 10000000, 2000000000]; // 0.1% spread
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 10000000, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 10000000, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -904,11 +904,11 @@ describe("Trading", function () {
       await network.provider.send("evm_mine");
 
       // Execute limit order
-      let PriceData = [node.address, 0, parseEther("20000"), 10000000, 2000000000, false]; // 0.1% spread
+      let PriceData = [node.address, false, 0, parseEther("20000"), 10000000, 2000000000]; // 0.1% spread
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 10000000, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 10000000, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -938,11 +938,11 @@ describe("Trading", function () {
       await network.provider.send("evm_mine");
 
       // Execute limit order
-      let PriceData = [node.address, 0, parseEther("30000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("30000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("30000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("30000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -972,11 +972,11 @@ describe("Trading", function () {
       await network.provider.send("evm_mine");
 
       // Execute limit order
-      let PriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -1007,16 +1007,16 @@ describe("Trading", function () {
       // Create limit order
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
-      await expect(trading.connect(owner).initiateLimitOrder(TradeInfo, 0, parseEther("20000"), PermitData, owner.address)).to.be.revertedWith("5");
+      await expect(trading.connect(owner).initiateLimitOrder(TradeInfo, 0, parseEther("20000"), PermitData, owner.address)).to.be.revertedWith("NotLimit()");
     });
     it("Executing an open position should revert", async function () {
       // Open market position
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -1025,7 +1025,7 @@ describe("Trading", function () {
       
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
       await trading.connect(owner).initiateMarketOrder(TradeInfo, PriceData, sig, PermitData, owner.address);    
-      await expect(trading.connect(user).executeLimitOrder(1, PriceData, sig)).to.be.revertedWith("5");
+      await expect(trading.connect(user).executeLimitOrder(1, PriceData, sig)).to.be.revertedWith("NotLimit()");
     });
     it("Creating and executing an unmet limit buy order should revert", async function () {
       // Create limit order
@@ -1039,18 +1039,18 @@ describe("Trading", function () {
       await network.provider.send("evm_mine");
       
       // Execute limit order
-      let PriceData = [node.address, 0, parseEther("30000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("30000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("30000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("30000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
         Buffer.from(message.substring(2), 'hex')
       );
             
-      await expect(trading.connect(user).executeLimitOrder(1, PriceData, sig)).to.be.revertedWith("6");
+      await expect(trading.connect(user).executeLimitOrder(1, PriceData, sig)).to.be.revertedWith("LimitNotMet()");
     });
     it("Creating and executing an unmet limit sell order should revert", async function () {
       // Create limit order
@@ -1064,18 +1064,18 @@ describe("Trading", function () {
       await network.provider.send("evm_mine");
       
       // Execute limit order
-      let PriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
         Buffer.from(message.substring(2), 'hex')
       );
             
-      await expect(trading.connect(user).executeLimitOrder(1, PriceData, sig)).to.be.revertedWith("6");
+      await expect(trading.connect(user).executeLimitOrder(1, PriceData, sig)).to.be.revertedWith("LimitNotMet()");
     });
     it("Creating and executing an unmet buy stop order should revert", async function () {
       // Create limit order
@@ -1089,18 +1089,18 @@ describe("Trading", function () {
       await network.provider.send("evm_mine");
       
       // Execute limit order
-      let PriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
         Buffer.from(message.substring(2), 'hex')
       );
       
-      await expect(trading.connect(user).executeLimitOrder(1, PriceData, sig)).to.be.revertedWith("6");
+      await expect(trading.connect(user).executeLimitOrder(1, PriceData, sig)).to.be.revertedWith("LimitNotMet()");
     });
     it("Creating and executing an unmet sell stop order should revert", async function () {
       // Create limit order
@@ -1114,18 +1114,18 @@ describe("Trading", function () {
       await network.provider.send("evm_mine");
       
       // Execute limit order
-      let PriceData = [node.address, 0, parseEther("30000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("30000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("30000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("30000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
         Buffer.from(message.substring(2), 'hex')
       );
       
-      await expect(trading.connect(user).executeLimitOrder(1, PriceData, sig)).to.be.revertedWith("6");
+      await expect(trading.connect(user).executeLimitOrder(1, PriceData, sig)).to.be.revertedWith("LimitNotMet()");
     });
     it("Creating and executing a limit order with price out of range (too low) should revert", async function () {
       await trading.connect(owner).setLimitOrderPriceRange(0);
@@ -1140,18 +1140,18 @@ describe("Trading", function () {
       await network.provider.send("evm_mine");
       
       // Execute limit order
-      let PriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
         Buffer.from(message.substring(2), 'hex')
       );
       
-      await expect(trading.connect(user).executeLimitOrder(1, PriceData, sig)).to.be.revertedWith("6");
+      await expect(trading.connect(user).executeLimitOrder(1, PriceData, sig)).to.be.revertedWith("LimitNotMet()");
     });
     it("Creating and executing a limit order with price out of range (too high) should revert", async function () {
       await trading.connect(owner).setLimitOrderPriceRange(0);
@@ -1166,18 +1166,18 @@ describe("Trading", function () {
       await network.provider.send("evm_mine");
       
       // Execute limit order
-      let PriceData = [node.address, 0, parseEther("30000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("30000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("30000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("30000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
         Buffer.from(message.substring(2), 'hex')
       );
       
-      await expect(trading.connect(user).executeLimitOrder(1, PriceData, sig)).to.be.revertedWith("6");
+      await expect(trading.connect(user).executeLimitOrder(1, PriceData, sig)).to.be.revertedWith("LimitNotMet()");
     });
     /**
      * Reverting SL/TP tests
@@ -1186,11 +1186,11 @@ describe("Trading", function () {
       // Open position
       trading.connect(owner).setTimeDelay(10); // 10 second delay
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("22000"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -1201,11 +1201,11 @@ describe("Trading", function () {
       await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Trade has opened
 
-      let closePriceData = [node.address, 0, parseEther("22000"), 0, 2000000000, false];
+      let closePriceData = [node.address, false, 0, parseEther("22000"), 0, 2000000000];
       let closeMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("22000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("22000"), 0, 2000000000]
         )
       );
       let closeSig = await node.signMessage(
@@ -1213,16 +1213,16 @@ describe("Trading", function () {
       );
       
       // Attempt TP execution
-      await expect(trading.connect(user).limitClose(1, true, closePriceData, closeSig)).to.be.revertedWith("0"); // Revert in _checkDelay
+      await expect(trading.connect(user).limitClose(1, true, closePriceData, closeSig)).to.be.revertedWith("WaitDelay()"); // Revert in _checkDelay
     });
     it("Executing an unmet long TP should revert", async function () {
       // Open position
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("30000"), parseEther("0"), ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -1233,16 +1233,16 @@ describe("Trading", function () {
       await trading.connect(owner).initiateMarketOrder(TradeInfo, PriceData, sig, PermitData, owner.address);
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Trade has opened
       // Attempt TP execution
-      await expect(trading.connect(user).limitClose(1, true, PriceData, sig)).to.be.revertedWith("6");
+      await expect(trading.connect(user).limitClose(1, true, PriceData, sig)).to.be.revertedWith("LimitNotMet()");
     });
     it("Executing an unmet short TP should revert", async function () {
       // Open position
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, false, parseEther("10000"), parseEther("0"), ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -1253,16 +1253,16 @@ describe("Trading", function () {
       await trading.connect(owner).initiateMarketOrder(TradeInfo, PriceData, sig, PermitData, owner.address);
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Trade has opened
       // Attempt SL execution
-      await expect(trading.connect(user).limitClose(1, true, PriceData, sig)).to.be.revertedWith("6");
+      await expect(trading.connect(user).limitClose(1, true, PriceData, sig)).to.be.revertedWith("LimitNotMet()");
     });
     it("Executing an unmet long SL should revert", async function () {
       // Open position
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("10000"), ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -1273,16 +1273,16 @@ describe("Trading", function () {
       await trading.connect(owner).initiateMarketOrder(TradeInfo, PriceData, sig, PermitData, owner.address);
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Trade has opened
       // Attempt TP execution
-      await expect(trading.connect(user).limitClose(1, false, PriceData, sig)).to.be.revertedWith("6");
+      await expect(trading.connect(user).limitClose(1, false, PriceData, sig)).to.be.revertedWith("LimitNotMet()");
     });
     it("Executing an unmet short SL should revert", async function () {
       // Open position
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, false, parseEther("0"), parseEther("30000"), ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -1293,7 +1293,7 @@ describe("Trading", function () {
       await trading.connect(owner).initiateMarketOrder(TradeInfo, PriceData, sig, PermitData, owner.address);
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Trade has opened
       // Attempt SL execution
-      await expect(trading.connect(user).limitClose(1, false, PriceData, sig)).to.be.revertedWith("6");
+      await expect(trading.connect(user).limitClose(1, false, PriceData, sig)).to.be.revertedWith("LimitNotMet()");
     });
     /**
      * No TP/SL tests
@@ -1301,11 +1301,11 @@ describe("Trading", function () {
     it("Executing a TP on an open position with no TP should revert", async function () {
       // Open position
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -1316,16 +1316,16 @@ describe("Trading", function () {
       await trading.connect(owner).initiateMarketOrder(TradeInfo, PriceData, sig, PermitData, owner.address);
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Trade has opened
       // Attempt TP execution
-      await expect(trading.connect(user).limitClose(1, true, PriceData, sig)).to.be.revertedWith("7");
+      await expect(trading.connect(user).limitClose(1, true, PriceData, sig)).to.be.revertedWith("LimitNotSet()");
     });
     it("Executing an SL on an open position with no SL should revert", async function () {
       // Open position
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -1336,7 +1336,7 @@ describe("Trading", function () {
       await trading.connect(owner).initiateMarketOrder(TradeInfo, PriceData, sig, PermitData, owner.address);
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Trade has opened
       // Attempt SL execution
-      await expect(trading.connect(user).limitClose(1, false, PriceData, sig)).to.be.revertedWith("7");
+      await expect(trading.connect(user).limitClose(1, false, PriceData, sig)).to.be.revertedWith("LimitNotSet()");
     });
     it("Limit closing a limit order should revert", async function () {
       // Create limit order
@@ -1345,34 +1345,34 @@ describe("Trading", function () {
       await trading.connect(owner).initiateLimitOrder(TradeInfo, 1, parseEther("20000"), PermitData, owner.address);
       expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order has been created
       // Attempt limit close
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
         Buffer.from(message.substring(2), 'hex')
       );
       
-      await expect(trading.connect(user).limitClose(1, true, PriceData, sig)).to.be.revertedWith("4");
+      await expect(trading.connect(user).limitClose(1, true, PriceData, sig)).to.be.revertedWith("IsLimit()");
     });
     it("Using too much gas should revert", async function () {
       await tradingExtension.connect(owner).setMaxGasPrice(100000000);
       // Attempt limit close (non-existing position is OK for this test) with high gas
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
         Buffer.from(message.substring(2), 'hex')
       );
       
-      await expect(trading.connect(user).limitClose(1, true, PriceData, sig, {gasPrice: 100000001})).to.be.revertedWith("1");
+      await expect(trading.connect(user).limitClose(1, true, PriceData, sig, {gasPrice: 100000001})).to.be.revertedWith("GasTooHigh()");
     });
     /**
      * Non-reverting SL/TP tests
@@ -1383,11 +1383,11 @@ describe("Trading", function () {
       await trading.connect(owner).setFees(false,0,0,0,0,0); // Set fees to zero for easier calculation
       // Open position
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("22000"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -1400,11 +1400,11 @@ describe("Trading", function () {
       // TP execution
       await trading.connect(owner).setFees(true,1e7,0,0,1e7,0); // Easier to calculate with only bot fees
       await trading.connect(owner).setFees(false,1e7,0,0,1e7,0); // Easier to calculate with only bot fees
-      let closePriceData = [node.address, 0, parseEther("22000"), 0, 2000000000, false];
+      let closePriceData = [node.address, false, 0, parseEther("22000"), 0, 2000000000];
       let closeMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("22000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("22000"), 0, 2000000000]
         )
       );
       let closeSig = await node.signMessage(
@@ -1422,11 +1422,11 @@ describe("Trading", function () {
       await trading.connect(owner).setFees(false,0,0,0,0,0); // Set fees to zero for easier calculation
       // Open position
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("22000"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -1439,11 +1439,11 @@ describe("Trading", function () {
       // TP execution
       await trading.connect(owner).setFees(true,1e7,0,0,1e7,0); // Easier to calculate with only bot fees
       await trading.connect(owner).setFees(false,1e7,0,0,1e7,0); // Easier to calculate with only bot fees
-      let closePriceData = [node.address, 0, parseEther("22000"), 0, 2000000000, false];
+      let closePriceData = [node.address, false, 0, parseEther("22000"), 0, 2000000000];
       let closeMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("22000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("22000"), 0, 2000000000]
         )
       );
       let closeSig = await node.signMessage(
@@ -1460,11 +1460,11 @@ describe("Trading", function () {
       await trading.connect(owner).setFees(false,0,0,0,0,0); // Set fees to zero for easier calculation
       // Open position
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, false, parseEther("18000"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -1477,11 +1477,11 @@ describe("Trading", function () {
       // TP execution
       await trading.connect(owner).setFees(true,1e7,0,0,1e7,0); // Easier to calculate with only bot fees
       await trading.connect(owner).setFees(false,1e7,0,0,1e7,0); // Easier to calculate with only bot fees
-      let closePriceData = [node.address, 0, parseEther("18000"), 0, 2000000000, false];
+      let closePriceData = [node.address, false, 0, parseEther("18000"), 0, 2000000000];
       let closeMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("18000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("18000"), 0, 2000000000]
         )
       );
       let closeSig = await node.signMessage(
@@ -1498,11 +1498,11 @@ describe("Trading", function () {
       await trading.connect(owner).setFees(false,0,0,0,0,0); // Set fees to zero for easier calculation
       // Open position
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, true, parseEther("0"), parseEther("18000"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -1515,11 +1515,11 @@ describe("Trading", function () {
       // SL execution
       await trading.connect(owner).setFees(true,1e7,0,0,1e7,0); // Easier to calculate with only bot fees
       await trading.connect(owner).setFees(false,1e7,0,0,1e7,0); // Easier to calculate with only bot fees
-      let closePriceData = [node.address, 0, parseEther("18000"), 0, 2000000000, false];
+      let closePriceData = [node.address, false, 0, parseEther("18000"), 0, 2000000000];
       let closeMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("18000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("18000"), 0, 2000000000]
         )
       );
       let closeSig = await node.signMessage(
@@ -1536,11 +1536,11 @@ describe("Trading", function () {
       await trading.connect(owner).setFees(false,0,0,0,0,0); // Set fees to zero for easier calculation
       // Open position
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, false, parseEther("0"), parseEther("22000"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -1553,11 +1553,11 @@ describe("Trading", function () {
       // SL execution
       await trading.connect(owner).setFees(true,1e7,0,0,1e7,0); // Easier to calculate with only bot fees
       await trading.connect(owner).setFees(false,1e7,0,0,1e7,0); // Easier to calculate with only bot fees
-      let closePriceData = [node.address, 0, parseEther("22000"), 0, 2000000000, false];
+      let closePriceData = [node.address, false, 0, parseEther("22000"), 0, 2000000000];
       let closeMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("22000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("22000"), 0, 2000000000]
         )
       );
       let closeSig = await node.signMessage(
@@ -1575,11 +1575,11 @@ describe("Trading", function () {
       await trading.connect(owner).initiateLimitOrder(TradeInfo, 1, parseEther("20000"), PermitData, owner.address);
       expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
       // Execute limit order
-      let PriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -1595,11 +1595,11 @@ describe("Trading", function () {
       await trading.connect(owner).setFees(false,0,0,0,0,0); // Set fees to zero for easier calculation
       // Open position
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, true, parseEther("0"), parseEther("18000"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -1626,7 +1626,7 @@ describe("Trading", function () {
       await stabletoken.connect(owner).mintFor(owner.address, parseEther("1000"));
       // Create limit order
       let TradeInfo = [parseEther("1000"), StableToken.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let PermitData = [0, 0, 0, ethers.constants.HashZero, ethers.constants.HashZero, false];
+      let PermitData = [0, 0, 0, ethers.constants.HashZero, ethers.constants.HashZero];
       await trading.connect(owner).initiateLimitOrder(TradeInfo, 1, parseEther("20000"), PermitData, owner.address);
       expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order opened
       expect(await stabletoken.balanceOf(owner.address)).to.equal(parseEther("0")); // Should no tigAsset left
@@ -1638,27 +1638,27 @@ describe("Trading", function () {
       await trading.connect(owner).initiateLimitOrder(TradeInfo, 1, parseEther("20000"), PermitData, owner.address);
       expect(await position.limitOrdersLength(0)).to.equal(1); // Limit order has been created
       // Attempt liquidation
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
         Buffer.from(message.substring(2), 'hex')
       );
       
-      await expect(trading.connect(user).liquidatePosition(1, PriceData, sig)).to.be.revertedWith("4");
+      await expect(trading.connect(user).liquidatePosition(1, PriceData, sig)).to.be.revertedWith("IsLimit()");
     });
     it("Liquidating a non-liquidatable position should revert", async function () {
       // Open position
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, false, parseEther("0"), parseEther("22000"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -1668,11 +1668,11 @@ describe("Trading", function () {
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
       await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
       // Attempt liquidation
-      let closePriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let closePriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let closeMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let closeSig = await node.signMessage(
@@ -1687,11 +1687,11 @@ describe("Trading", function () {
       await trading.connect(owner).setFees(false,0,0,0,0,0); // Easier to calculate without fees
       // Open position
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -1701,11 +1701,11 @@ describe("Trading", function () {
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
       await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
       // Attempt liquidation
-      let closePriceData = [node.address, 0, parseEther("2000"), 0, 2000000000, false]; // Position size down 90%
+      let closePriceData = [node.address, false, 0, parseEther("2000"), 0, 2000000000]; // Position size down 90%
       let closeMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("2000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("2000"), 0, 2000000000]
         )
       );
       let closeSig = await node.signMessage(
@@ -1723,11 +1723,11 @@ describe("Trading", function () {
       await trading.connect(owner).setFees(false,0,0,0,0,0); // Easier to calculate without fees
       // Open position
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, false, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -1737,11 +1737,11 @@ describe("Trading", function () {
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
       await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
       // Attempt liquidation
-      let closePriceData = [node.address, 0, parseEther("30000"), 0, 2000000000, false]; // Position size up 50%
+      let closePriceData = [node.address, false, 0, parseEther("30000"), 0, 2000000000]; // Position size up 50%
       let closeMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("30000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("30000"), 0, 2000000000]
         )
       );
       let closeSig = await node.signMessage(
@@ -1759,15 +1759,15 @@ describe("Trading", function () {
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
       await trading.connect(owner).initiateLimitOrder(TradeInfo, 1, parseEther("20000"), PermitData, owner.address);
-      await expect(trading.connect(owner).updateTpSl(true, 1, parseEther("22000"), [ethers.constants.AddressZero, 0, 0, 0, 0, false], "0x", owner.address)).to.be.revertedWith("4");
+      await expect(trading.connect(owner).updateTpSl(true, 1, parseEther("22000"), [ethers.constants.AddressZero, false, 0, 0, 0, 0], "0x", owner.address)).to.be.revertedWith("IsLimit()");
     });
     it("Updating TP", async function () {
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -1776,17 +1776,17 @@ describe("Trading", function () {
       
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
       await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
-      await trading.connect(owner).updateTpSl(true, 1, parseEther("22000"), [ethers.constants.AddressZero, 0, 0, 0, 0, false], "0x", owner.address);
+      await trading.connect(owner).updateTpSl(true, 1, parseEther("22000"), [ethers.constants.AddressZero, false, 0, 0, 0, 0], "0x", owner.address);
       let [,,,,,tpPrice,,,,,,] = await position.trades(1);
       expect(tpPrice).to.equal(parseEther("22000"));
     });
     it("Updating SL", async function () {
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -1801,11 +1801,11 @@ describe("Trading", function () {
     });
     it("Add margin should revert if on limit order", async function () {
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let priceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let priceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -1819,11 +1819,11 @@ describe("Trading", function () {
       await stabletoken.connect(owner).setMinter(owner.address, true);
       await stabletoken.connect(owner).mintFor(owner.address, parseEther("1000000"));
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -1832,17 +1832,17 @@ describe("Trading", function () {
       
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
       await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
-      await expect(trading.connect(owner).addMargin(1, StableVault.address, StableToken.address, parseEther("1000000"), openPriceData, openSig, PermitData, owner.address)).to.be.revertedWith("!lev");
+      await expect(trading.connect(owner).addMargin(1, StableVault.address, StableToken.address, parseEther("1000000"), openPriceData, openSig, PermitData, owner.address)).to.be.revertedWith("BadLeverage()");
     });
     it("Add margin with non-tigAsset", async function () {
       await trading.connect(owner).setFees(true,0,0,0,0,0); // Easier to calculate without fees
       await trading.connect(owner).setFees(false,0,0,0,0,0); // Easier to calculate without fees
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -1851,7 +1851,7 @@ describe("Trading", function () {
       
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
       await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
-      await trading.connect(owner).addMargin(1, StableVault.address, MockDAI.address, parseEther("1000"), openPriceData, openSig, [0, 0, 0, ethers.constants.HashZero, ethers.constants.HashZero, false], owner.address);
+      await trading.connect(owner).addMargin(1, StableVault.address, MockDAI.address, parseEther("1000"), openPriceData, openSig, [0, 0, 0, ethers.constants.HashZero, ethers.constants.HashZero], owner.address);
       let [margin,leverage,,,,,,,,,,] = await position.trades(1);
       expect(margin).to.equal(parseEther("2000"));
       expect(leverage).to.equal(parseEther("5"));
@@ -1862,11 +1862,11 @@ describe("Trading", function () {
       await stabletoken.connect(owner).setMinter(owner.address, true);
       await stabletoken.connect(owner).mintFor(owner.address, parseEther("1000"));
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -1875,7 +1875,7 @@ describe("Trading", function () {
       
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
       await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
-      await trading.connect(owner).addMargin(1, StableVault.address, StableToken.address, parseEther("1000"), openPriceData, openSig, [0, 0, 0, ethers.constants.HashZero, ethers.constants.HashZero, false], owner.address);
+      await trading.connect(owner).addMargin(1, StableVault.address, StableToken.address, parseEther("1000"), openPriceData, openSig, [0, 0, 0, ethers.constants.HashZero, ethers.constants.HashZero], owner.address);
       expect(await stabletoken.balanceOf(owner.address)).to.equal(parseEther("0")); // Should no tigAsset left
       let [margin,leverage,,,,,,,,,,] = await position.trades(1);
       expect(margin).to.equal(parseEther("2000"));
@@ -1887,11 +1887,11 @@ describe("Trading", function () {
       await stabletoken.connect(owner).setMinter(owner.address, true);
       await stabletoken.connect(owner).mintFor(owner.address, parseEther("1000"));
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -1910,15 +1910,15 @@ describe("Trading", function () {
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
       await trading.connect(owner).initiateLimitOrder(TradeInfo, 1, parseEther("20000"), PermitData, owner.address);
-      await expect(trading.connect(owner).removeMargin(1, StableVault.address, StableToken.address, parseEther("100"), [ethers.constants.AddressZero, 0, 0, 0, 0, false], ethers.constants.HashZero, owner.address)).to.be.revertedWith("");
+      await expect(trading.connect(owner).removeMargin(1, StableVault.address, StableToken.address, parseEther("100"), [ethers.constants.AddressZero, false, 0, 0, 0, 0], ethers.constants.HashZero, owner.address)).to.be.revertedWith("IsLimit()");
     });
     it("Remove margin should revert if leverage goes above max leverage", async function () {
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -1927,15 +1927,15 @@ describe("Trading", function () {
       
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
       await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
-      await expect(trading.connect(owner).removeMargin(1, StableVault.address, StableToken.address, parseEther("994.9"), openPriceData, openSig, owner.address)).to.be.revertedWith("!lev");
+      await expect(trading.connect(owner).removeMargin(1, StableVault.address, StableToken.address, parseEther("994.9"), openPriceData, openSig, owner.address)).to.be.revertedWith("BadLeverage()");
     });
     it("Remove margin should revert if it would go into liquidation threshold", async function () {
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -1943,11 +1943,11 @@ describe("Trading", function () {
       );
       
 
-      let removeMarginPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let removeMarginPriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let removeMarginMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let removeMarginSig = await node.signMessage(
@@ -1962,11 +1962,11 @@ describe("Trading", function () {
       await trading.connect(owner).setFees(true,0,0,0,0,0); // Easier to calculate without fees
       await trading.connect(owner).setFees(false,0,0,0,0,0); // Easier to calculate without fees
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -1984,11 +1984,11 @@ describe("Trading", function () {
       await trading.connect(owner).setFees(true,0,0,0,0,0); // Easier to calculate without fees
       await trading.connect(owner).setFees(false,0,0,0,0,0); // Easier to calculate without fees
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -2008,11 +2008,11 @@ describe("Trading", function () {
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
       await trading.connect(owner).initiateLimitOrder(TradeInfo, 1, parseEther("20000"), PermitData, owner.address);
 
-      let addPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let addPriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let addMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let addSig = await node.signMessage(
@@ -2021,29 +2021,29 @@ describe("Trading", function () {
 
       await stabletoken.connect(owner).setMinter(owner.address, true);
       await stabletoken.connect(owner).mintFor(owner.address, parseEther("3000"));
-      await expect(trading.connect(owner).addToPosition(1, parseEther("3000"), addPriceData, addSig, StableVault.address, StableToken.address, PermitData, owner.address)).to.be.revertedWith("4");
+      await expect(trading.connect(owner).addToPosition(1, parseEther("3000"), addPriceData, addSig, StableVault.address, StableToken.address, PermitData, owner.address)).to.be.revertedWith("IsLimit()");
     });
     it("Adding to position on long should combine margin and open price proportionally, accInterest should work as expected", async function () {
       await trading.connect(owner).setFees(true,0,0,0,0,0); // Easier to calculate without fees
       await trading.connect(owner).setFees(false,0,0,0,0,0); // Easier to calculate without fees
       await pairscontract.connect(owner).setAssetBaseFundingRate(0, 1e9); // 10% Annual rate
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
         Buffer.from(openMessage.substring(2), 'hex')
       );
       
-      let addPriceData = [node.address, 0, parseEther("10000"), 0, 2031538000, false];
+      let addPriceData = [node.address, false, 0, parseEther("10000"), 0, 2031538000];
       let addMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2031538000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2031538000]
         )
       );
       let addSig = await node.signMessage(
@@ -2079,22 +2079,22 @@ describe("Trading", function () {
       await trading.connect(owner).setFees(false,0,0,0,0,0); // Easier to calculate without fees
       await pairscontract.connect(owner).setAssetBaseFundingRate(0, 1e9); // 10% Annual rate
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, false, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
         Buffer.from(openMessage.substring(2), 'hex')
       );
       
-      let addPriceData = [node.address, 0, parseEther("10000"), 0, 2031538000, false];
+      let addPriceData = [node.address, false, 0, parseEther("10000"), 0, 2031538000];
       let addMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2031538000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2031538000]
         )
       );
       let addSig = await node.signMessage(
@@ -2129,11 +2129,11 @@ describe("Trading", function () {
       await pairscontract.connect(owner).setAssetBaseFundingRate(0, 0);
       await trading.connect(owner).setMaxWinPercent(6e10); // +500% max win, should revert with +400%
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("2"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -2143,11 +2143,11 @@ describe("Trading", function () {
       await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
 
       // +400% PnL
-      let newPriceData = [node.address, 0, parseEther("30000"), 0, 2000000000, false];
+      let newPriceData = [node.address, false, 0, parseEther("30000"), 0, 2000000000];
       let newMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("30000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("30000"), 0, 2000000000]
         )
       );
       let newSig = await node.signMessage(
@@ -2159,11 +2159,11 @@ describe("Trading", function () {
       await pairscontract.connect(owner).setAssetBaseFundingRate(0, 0);
       await trading.connect(owner).setMaxWinPercent(6e10); // +500% max win, should revert with +400%
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("2"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -2173,11 +2173,11 @@ describe("Trading", function () {
       await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
 
       // +400% PnL
-      let newPriceData = [node.address, 0, parseEther("30000"), 0, 2000000000, false];
+      let newPriceData = [node.address, false, 0, parseEther("30000"), 0, 2000000000];
       let newMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("30000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("30000"), 0, 2000000000]
         )
       );
       let newSig = await node.signMessage(
@@ -2189,11 +2189,11 @@ describe("Trading", function () {
       await pairscontract.connect(owner).setAssetBaseFundingRate(0, 0);
       await trading.connect(owner).setMaxWinPercent(6e10); // +500% max win, should revert with +400%
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("2"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -2201,11 +2201,11 @@ describe("Trading", function () {
       );
       
       // +400% PnL
-      let addPriceData = [node.address, 0, parseEther("30000"), 0, 2000000000, false];
+      let addPriceData = [node.address, false, 0, parseEther("30000"), 0, 2000000000];
       let addMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("30000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("30000"), 0, 2000000000]
         )
       );
       let addSig = await node.signMessage(
@@ -2223,11 +2223,11 @@ describe("Trading", function () {
       await trading.connect(owner).setFees(true,0,0,0,0,0); // Easier to calculate without fees
       await trading.connect(owner).setFees(false,0,0,0,0,0); // Easier to calculate without fees
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -2239,11 +2239,11 @@ describe("Trading", function () {
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Trade has opened
       expect(await stabletoken.balanceOf(owner.address)).to.equal(0); // Starts with zero balance
 
-      let closePriceData = [node.address, 0, parseEther("11000"), 0, 2000000000, false]; // Price 10% higher
+      let closePriceData = [node.address, false, 0, parseEther("11000"), 0, 2000000000]; // Price 10% higher
       let closeMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("11000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("11000"), 0, 2000000000]
         )
       );
       let closeSig = await node.signMessage(
@@ -2258,11 +2258,11 @@ describe("Trading", function () {
       await trading.connect(owner).setFees(true,0,0,0,0,0); // Easier to calculate without fees
       await trading.connect(owner).setFees(false,0,0,0,0,0); // Easier to calculate without fees
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, false, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -2274,11 +2274,11 @@ describe("Trading", function () {
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Trade has opened
       expect(await stabletoken.balanceOf(owner.address)).to.equal(0); // Starts with zero balance
 
-      let closePriceData = [node.address, 0, parseEther("9000"), 0, 2000000000, false]; // Price 10% lower
+      let closePriceData = [node.address, false, 0, parseEther("9000"), 0, 2000000000]; // Price 10% lower
       let closeMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("9000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("9000"), 0, 2000000000]
         )
       );
       let closeSig = await node.signMessage(
@@ -2293,11 +2293,11 @@ describe("Trading", function () {
       await trading.connect(owner).setFees(true,0,0,0,0,0); // Easier to calculate without fees
       await trading.connect(owner).setFees(false,0,0,0,0,0); // Easier to calculate without fees
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -2309,11 +2309,11 @@ describe("Trading", function () {
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Trade has opened
       expect(await stabletoken.balanceOf(owner.address)).to.equal(0); // Starts with zero balance
 
-      let closePriceData = [node.address, 0, parseEther("9000"), 0, 2000000000, false]; // Price 10% lower
+      let closePriceData = [node.address, false, 0, parseEther("9000"), 0, 2000000000]; // Price 10% lower
       let closeMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("9000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("9000"), 0, 2000000000]
         )
       );
       let closeSig = await node.signMessage(
@@ -2328,11 +2328,11 @@ describe("Trading", function () {
       await trading.connect(owner).setFees(true,0,0,0,0,0); // Easier to calculate without fees
       await trading.connect(owner).setFees(false,0,0,0,0,0); // Easier to calculate without fees
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, false, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -2344,11 +2344,11 @@ describe("Trading", function () {
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Trade has opened
       expect(await stabletoken.balanceOf(owner.address)).to.equal(0); // Starts with zero balance
 
-      let closePriceData = [node.address, 0, parseEther("11000"), 0, 2000000000, false]; // Price 10% higher
+      let closePriceData = [node.address, false, 0, parseEther("11000"), 0, 2000000000]; // Price 10% higher
       let closeMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("11000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("11000"), 0, 2000000000]
         )
       );
       let closeSig = await node.signMessage(
@@ -2364,11 +2364,11 @@ describe("Trading", function () {
       await trading.connect(owner).setFees(true,0,0,0,0,0); // Easier to calculate without fees
       await trading.connect(owner).setFees(false,0,0,0,0,0); // Easier to calculate without fees
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -2380,11 +2380,11 @@ describe("Trading", function () {
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Trade has opened
       expect(await stabletoken.balanceOf(owner.address)).to.equal(0); // Starts with zero balance
 
-      let closePriceData = [node.address, 0, parseEther("100000"), 0, 2000000000, false]; // Price 1000% higher
+      let closePriceData = [node.address, false, 0, parseEther("100000"), 0, 2000000000]; // Price 1000% higher
       let closeMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("100000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("100000"), 0, 2000000000]
         )
       );
       let closeSig = await node.signMessage(
@@ -2400,11 +2400,11 @@ describe("Trading", function () {
       await trading.connect(owner).setFees(true,0,0,0,0,0); // Easier to calculate without fees
       await trading.connect(owner).setFees(false,0,0,0,0,0); // Easier to calculate without fees
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -2416,11 +2416,11 @@ describe("Trading", function () {
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Trade has opened
       expect(await stabletoken.balanceOf(owner.address)).to.equal(0); // Starts with zero balance
 
-      let closePriceData = [node.address, 0, parseEther("100000"), 0, 2000000000, false]; // Price 1000% higher
+      let closePriceData = [node.address, false, 0, parseEther("100000"), 0, 2000000000]; // Price 1000% higher
       let closeMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("100000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("100000"), 0, 2000000000]
         )
       );
       let closeSig = await node.signMessage(
@@ -2436,11 +2436,11 @@ describe("Trading", function () {
       await trading.connect(owner).setFees(true,0,0,0,0,0); // Easier to calculate without fees
       await trading.connect(owner).setFees(false,0,0,0,0,0); // Easier to calculate without fees
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -2455,11 +2455,11 @@ describe("Trading", function () {
       let [margin,,,,,,,,,,,] = await position.trades(1);
       expect(margin).to.equal(parseEther("1000")); // Should be 1000 without fees
 
-      let closePriceData = [node.address, 0, parseEther("100000"), 0, 2000000000, false]; // Price 10x higher
+      let closePriceData = [node.address, false, 0, parseEther("100000"), 0, 2000000000]; // Price 10x higher
       let closeMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("100000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("100000"), 0, 2000000000]
         )
       );
       let closeSig = await node.signMessage(
@@ -2474,11 +2474,11 @@ describe("Trading", function () {
       await trading.connect(owner).setFees(true,0,0,0,0,0); // Easier to calculate without fees
       await trading.connect(owner).setFees(false,0,0,0,0,0); // Easier to calculate without fees
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -2490,11 +2490,11 @@ describe("Trading", function () {
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Trade has opened
       expect(await stabletoken.balanceOf(owner.address)).to.equal(0); // Starts with zero balance
 
-      let closePriceData = [node.address, 0, parseEther("1000"), 0, 2000000000, false]; // Price 90% lower
+      let closePriceData = [node.address, false, 0, parseEther("1000"), 0, 2000000000]; // Price 90% lower
       let closeMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("1000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("1000"), 0, 2000000000]
         )
       );
       let closeSig = await node.signMessage(
@@ -2509,11 +2509,11 @@ describe("Trading", function () {
       await trading.connect(owner).setFees(true,5e6,5e6,1e6,2e6,0);
       await trading.connect(owner).setFees(false,5e6,5e6,1e6,2e6,0);
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -2525,11 +2525,11 @@ describe("Trading", function () {
       expect(await position.assetOpenPositionsLength(0)).to.equal(1); // Trade has opened
       expect(await stabletoken.balanceOf(owner.address)).to.equal(0); // Starts with zero balance
 
-      let closePriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false]; // Price is same
+      let closePriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000]; // Price is same
       let closeMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let closeSig = await node.signMessage(
@@ -2544,11 +2544,11 @@ describe("Trading", function () {
     it("CheckDelay on opening + interaction should work as expected", async function () {
       trading.connect(owner).setTimeDelay(1000); // 1000 second delay
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -2558,18 +2558,18 @@ describe("Trading", function () {
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
       await trading.connect(owner).initiateMarketOrder(TradeInfo, openPriceData, openSig, PermitData, owner.address);
 
-      let closePriceData = [node.address, 0, parseEther("11000"), 0, 2000000000, false];
+      let closePriceData = [node.address, false, 0, parseEther("11000"), 0, 2000000000];
       let closeMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("11000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("11000"), 0, 2000000000]
         )
       );
       let closeSig = await node.signMessage(
         Buffer.from(closeMessage.substring(2), 'hex')
       );
       
-      await expect(trading.connect(owner).initiateCloseOrder(1, 1e10, closePriceData, closeSig, StableVault.address, StableToken.address, owner.address)).to.be.revertedWith("0");
+      await expect(trading.connect(owner).initiateCloseOrder(1, 1e10, closePriceData, closeSig, StableVault.address, StableToken.address, owner.address)).to.be.revertedWith("WaitDelay()");
     });
   });
   describe("Spread calculations", function () {
@@ -2579,11 +2579,11 @@ describe("Trading", function () {
       await trading.connect(owner).setFees(false,0,0,0,0,0); // Easier to calculate without fees
 
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, true, 0, 0, ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("10000"), 100000000, 2000000000, false]; // 1% spread
+      let PriceData = [node.address, false, 0, parseEther("10000"), 100000000, 2000000000]; // 1% spread
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 100000000, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 100000000, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -2596,7 +2596,7 @@ describe("Trading", function () {
       let [,,,,price,,,,,,,] = await position.trades(1);
       expect(price).to.be.equal(parseEther("10100"));
 
-      PermitData = [0, 0, 0, ethers.constants.HashZero, ethers.constants.HashZero, false]; // Permit not needed anymore
+      PermitData = [0, 0, 0, ethers.constants.HashZero, ethers.constants.HashZero]; // Permit not needed anymore
       let TradeInfo2 = [parseEther("10000"), MockDAI.address, StableVault.address, parseEther("10"), 0, false, 0, 0, ethers.constants.HashZero];
       await trading.connect(owner).initiateMarketOrder(TradeInfo2, PriceData, sig, PermitData, owner.address);
       let [,,,,price_short,,,,,,,] = await position.trades(2);
@@ -2607,11 +2607,11 @@ describe("Trading", function () {
     it("Long liquidation price without funding rate", async function () {
       await pairscontract.connect(owner).setAssetBaseFundingRate(0, 0);
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -2625,11 +2625,11 @@ describe("Trading", function () {
     it("Short liquidation price without funding rate", async function () {
       await pairscontract.connect(owner).setAssetBaseFundingRate(0, 0);
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, false, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -2643,11 +2643,11 @@ describe("Trading", function () {
     it("Long liquidation price with funding rate", async function () {
       await pairscontract.connect(owner).setAssetBaseFundingRate(0, 1e9); // 10% Annual rate
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -2663,11 +2663,11 @@ describe("Trading", function () {
     it("Short liquidation price with funding rate", async function () {
       await pairscontract.connect(owner).setAssetBaseFundingRate(0, 1e9); // 10% Annual rate
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, false, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -2685,11 +2685,11 @@ describe("Trading", function () {
     it("Using a non-created referral code shouldn't refer a trader", async function() {
       // "testcode" not created as a referral code
       let TradeInfo = [parseEther("10000"), MockDAI.address, StableVault.address, parseEther("100"), 0, false, parseEther("0"), parseEther("0"), ethers.utils.id("testcode")];
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -2710,11 +2710,11 @@ describe("Trading", function () {
       expect(await stabletoken.balanceOf(user.address)).to.equal(parseEther("0"));
 
       let TradeInfo = [parseEther("10000"), MockDAI.address, StableVault.address, parseEther("100"), 0, false, parseEther("0"), parseEther("0"), ethers.utils.id("testcode")];
-      let PriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -2733,17 +2733,17 @@ describe("Trading", function () {
       await referrals.connect(user).createReferralCode(ethers.utils.id("testcode2"));
 
       let TradeInfo2 = [parseEther("10000"), MockDAI.address, StableVault.address, parseEther("100"), 0, true, parseEther("0"), parseEther("0"), ethers.utils.id("testcode2")];
-      let PriceData2 = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData2 = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message2 = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig2 = await node.signMessage(
         Buffer.from(message2.substring(2), 'hex')
       );
-      let PermitData2 = [0, 0, 0, ethers.constants.HashZero, ethers.constants.HashZero, false]; // No permit needed
+      let PermitData2 = [0, 0, 0, ethers.constants.HashZero, ethers.constants.HashZero]; // No permit needed
 
       await trading.connect(owner).initiateMarketOrder(TradeInfo2, PriceData2, sig2, PermitData2, owner.address);
       expect(await stabletoken.balanceOf(user.address)).to.equal(parseEther("200")); // + 0.01% * 10000 * 100 = $200
@@ -2752,11 +2752,11 @@ describe("Trading", function () {
       expect(margin2).to.equal(parseEther("9100")); // 10% fee discount
 
       // Referrer should earn fees upon closing
-      let PriceData3 = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData3 = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message3 = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig3 = await node.signMessage(
@@ -2767,11 +2767,11 @@ describe("Trading", function () {
       expect(await stabletoken.balanceOf(user.address)).to.equal(parseEther("291")); // + 0.01% * 9100 * 100 = $291
 
       // Closing last position
-      let PriceData4 = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let PriceData4 = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let message4 = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let sig4 = await node.signMessage(
@@ -2794,11 +2794,11 @@ describe("Trading", function () {
       await tradingExtension.connect(owner).setChainlinkEnabled(true);
       await chainlink.connect(owner).setPrice(100000000000000); // 10000e10
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -2813,11 +2813,11 @@ describe("Trading", function () {
       await tradingExtension.connect(owner).setChainlinkEnabled(true);
       await chainlink.connect(owner).setPrice(0);
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -2833,11 +2833,11 @@ describe("Trading", function () {
       await tradingExtension.connect(owner).setChainlinkEnabled(true);
       await chainlink.connect(owner).setPrice(200000000000000); // 20000e10
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("5"), 0, true, parseEther("0"), parseEther("0"), ethers.constants.HashZero];
-      let openPriceData = [node.address, 0, parseEther("20000"), 0, 2000000000, false];
+      let openPriceData = [node.address, false, 0, parseEther("20000"), 0, 2000000000];
       let openMessage = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("20000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("20000"), 0, 2000000000]
         )
       );
       let openSig = await node.signMessage(
@@ -2852,11 +2852,11 @@ describe("Trading", function () {
   describe("Open interest calculations", function () {
     it("Should work correctly on long, short, full and partial close", async function () {
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, 0, 0, ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -2865,7 +2865,7 @@ describe("Trading", function () {
       
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
       await trading.connect(owner).initiateMarketOrder(TradeInfo, PriceData, sig, PermitData, owner.address);
-      PermitData = [0, 0, 0, ethers.constants.HashZero, ethers.constants.HashZero, false]; // Permit not needed anymore
+      PermitData = [0, 0, 0, ethers.constants.HashZero, ethers.constants.HashZero]; // Permit not needed anymore
       let [longOi, shortOi] = await pairscontract.idToOi(0, StableToken.address);
       expect(longOi).to.equal(parseEther("9900"));
       expect(shortOi).to.equal(parseEther("0"));
@@ -2892,11 +2892,11 @@ describe("Trading", function () {
   describe("Trading through a proxy", function () {
     it("Should revert if proxy isn't approved", async function () {
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, 0, 0, ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -2904,16 +2904,16 @@ describe("Trading", function () {
       );
       
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
-      await expect(trading.connect(proxy).initiateMarketOrder(TradeInfo, PriceData, sig, PermitData, owner.address)).to.be.revertedWith("Proxy not approved");
+      await expect(trading.connect(proxy).initiateMarketOrder(TradeInfo, PriceData, sig, PermitData, owner.address)).to.be.revertedWith("NotProxy()");
     });
     it("Should revert if proxy approval is expired", async function () {
       await trading.connect(owner).approveProxy(proxy.address, 1, {value: parseEther("1")});
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, 0, 0, ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(
@@ -2921,16 +2921,16 @@ describe("Trading", function () {
       );
       
       let PermitData = [permitSig.deadline, ethers.constants.MaxUint256, permitSig.v, permitSig.r, permitSig.s, true];
-      await expect(trading.connect(proxy).initiateMarketOrder(TradeInfo, PriceData, sig, PermitData, owner.address)).to.be.revertedWith("Proxy not approved");
+      await expect(trading.connect(proxy).initiateMarketOrder(TradeInfo, PriceData, sig, PermitData, owner.address)).to.be.revertedWith("NotProxy()");
     });
     it("Should work as expected if proxy is approved", async function () {
       await trading.connect(owner).approveProxy(proxy.address, 10000000000, {value: parseEther("1")}); // Approved for a very long time
       let TradeInfo = [parseEther("1000"), MockDAI.address, StableVault.address, parseEther("10"), 0, true, 0, 0, ethers.constants.HashZero];
-      let PriceData = [node.address, 0, parseEther("10000"), 0, 2000000000, false];
+      let PriceData = [node.address, false, 0, parseEther("10000"), 0, 2000000000];
       let message = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ['address', 'uint256', 'uint256', 'uint256', 'uint256', 'bool'],
-          [node.address, 0, parseEther("10000"), 0, 2000000000, false]
+          ['address', 'bool', 'uint256', 'uint256', 'uint256', 'uint256'],
+          [node.address, false, 0, parseEther("10000"), 0, 2000000000]
         )
       );
       let sig = await node.signMessage(

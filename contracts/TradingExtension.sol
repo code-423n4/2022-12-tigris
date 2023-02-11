@@ -8,6 +8,12 @@ import "./interfaces/IReferrals.sol";
 import "./interfaces/IPosition.sol";
 
 contract TradingExtension is Ownable{
+
+    error LimitNotMet();
+    error LimitNotSet();
+    error IsLimit();
+    error GasTooHigh();
+
     uint256 constant private DIVISION_CONSTANT = 1e10; // 100%
 
     address public immutable trading;
@@ -106,29 +112,29 @@ contract TradingExtension is Ownable{
         getVerifiedPrice(_trade.asset, _priceData, _signature, 0);
         uint256 _price = _priceData.price;
 
-        if (_trade.orderType != 0) revert("4"); //IsLimit
+        if (_trade.orderType != 0) revert IsLimit();
 
         if (_tp) {
-            if (_trade.tpPrice == 0) revert("7"); //LimitNotSet
+            if (_trade.tpPrice == 0) revert LimitNotSet();
             if (_trade.direction) {
-                if (_trade.tpPrice > _price) revert("6"); //LimitNotMet
+                if (_trade.tpPrice > _price) revert LimitNotMet();
             } else {
-                if (_trade.tpPrice < _price) revert("6"); //LimitNotMet
+                if (_trade.tpPrice < _price) revert LimitNotMet();
             }
             _limitPrice = _trade.tpPrice;
         } else {
-            if (_trade.slPrice == 0) revert("7"); //LimitNotSet
+            if (_trade.slPrice == 0) revert LimitNotSet();
             if (_trade.direction) {
-                if (_trade.slPrice < _price) revert("6"); //LimitNotMet
+                if (_trade.slPrice < _price) revert LimitNotMet();
             } else {
-                if (_trade.slPrice > _price) revert("6"); //LimitNotMet
+                if (_trade.slPrice > _price) revert LimitNotMet();
             }
             _limitPrice = _trade.slPrice;
         }
     }
 
     function _checkGas() public view {
-        if (tx.gasprice > maxGasPrice) revert("1"); //GasTooHigh
+        if (tx.gasprice > maxGasPrice) revert GasTooHigh();
     }
 
     function modifyShortOi(
