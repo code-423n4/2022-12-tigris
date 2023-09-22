@@ -1,0 +1,803 @@
+==============================================================
+Guild: Code4rena
+Channel: ARCHIVE-Q4-2022 / tigris-dec09
+==============================================================
+
+[12/08/2022 16:30] kartoonjoy (pinned)
+👋 Hello and welcome to the contest channel for the $90,500 USDC **Tigris Trade** contest!
+
+📆 Contest opens 12/09/2022 20:00 (20:00 UTC) and runs through 12/16/2022 20:00 (20:00 UTC) (7 days).
+
+Please give a warm welcome to the Tigris Trade team, particularly @0xhaz, @GainsGoblin, who will be available for questions either here in the channel or via DM.
+
+We'll be posting relevant links, documentation, etc. here, so if you intend to participate in this contest, consider enabling notifications for this channel. 🐺 ⏰
+
+Contest Page: https://code4rena.com/contests/2022-12-tigris-trade-contest
+
+{Embed}
+https://code4rena.com/contests/2022-12-tigris-trade-contest
+Code4rena Tigris Trade contest
+$90,500 USDC
+9 December 2022—16 December 2022
+Code4rena - ARCHIVE-Q4-2022 - tigris-dec09 [1050447663226691614].txt_Files/C4-banner-7C19B.png
+
+{Reactions}
+isthatcheese (10) 👏 (5) 🔥 (6) 
+
+[12/09/2022 19:20] kartoonjoy
+Pinned a message.
+
+
+[12/09/2022 20:05] carrotsmuggler
+is this a private audit? cannot seem to open the page
+
+{Reactions}
+🤔 (2) thinkSlow 
+
+[12/09/2022 20:05] telcontar
+:pepesmugkms:
+
+
+[12/09/2022 20:06] kartoonjoy
+No but the display may be delayed. Please be patient
+
+{Reactions}
+chefskiss (3) 👍 (2) 
+
+[12/09/2022 20:11] itsmetechjay
+You can view the repo directly in the meantime: https://github.com/code-423n4/2022-12-tigris
+
+{Embed}
+https://github.com/code-423n4/2022-12-tigris
+GitHub - code-423n4/2022-12-tigris
+Contribute to code-423n4/2022-12-tigris development by creating an account on GitHub.
+Code4rena - ARCHIVE-Q4-2022 - tigris-dec09 [1050447663226691614].txt_Files/36215ba8-c4d3-4682-bc4f-7fa0869d2dcc-89895
+
+{Reactions}
+🫡 (5) 
+
+[12/09/2022 21:10] thepicodes (pinned)
+**Automated Findings: ** https://gist.github.com/Picodes/341209cd106cfdaaba80610fc76cbe56
+
+{Embed}
+https://gist.github.com/Picodes/341209cd106cfdaaba80610fc76cbe56
+4naly3er-2022-12-tigris.md
+GitHub Gist: instantly share code, notes, and snippets.
+Code4rena - ARCHIVE-Q4-2022 - tigris-dec09 [1050447663226691614].txt_Files/gist-og-image-17482.png
+
+
+[12/09/2022 21:13] itsmetechjay (pinned)
+Wardens, please note that c4udit output has been posted above and added to pinned posts. These are considered publicly known issues and are not eligible for awards.
+
+Automated findings: 
+https://gist.github.com/Picodes/341209cd106cfdaaba80610fc76cbe56
+
+This will also be linked in the contest README file shortly.
+
+
+[12/09/2022 21:13] itsmetechjay
+Pinned a message.
+
+
+[12/09/2022 21:15] itsmetechjay
+Pinned a message.
+
+
+[12/10/2022 10:48] eyexploit
+cool
+
+
+[12/10/2022 12:25] .sha256yan
+is https://docs.tigris.trade/tigris/quick-links the only spec? Do you have a whitepaper?
+
+{Embed}
+https://docs.tigris.trade/tigris/quick-links
+Quick links
+
+
+[12/10/2022 12:26] gainsgoblin
+Yes thats the only spec
+
+
+[12/10/2022 12:50] aphak5010
+@GainsGoblin Can I dm?
+
+
+[12/10/2022 12:50] gainsgoblin
+Yes, my DMs are open
+
+
+[12/10/2022 14:49] jrnet
+Can someone help me in understanding the access restrictions that are achieved using `onlyProtocol` modifier? who exactly are able to access the function? Whom does owner set as protocol
+
+{Attachments}
+Code4rena - ARCHIVE-Q4-2022 - tigris-dec09 [1050447663226691614].txt_Files/image-4A56E.png
+Code4rena - ARCHIVE-Q4-2022 - tigris-dec09 [1050447663226691614].txt_Files/image-98B9C.png
+
+
+[12/10/2022 14:51] gainsgoblin
+TradingExtension contract would be set as protocol
+
+{Reactions}
+✅ (2) 
+
+[12/10/2022 17:32] ch_301
+which data need to be signed with the node address to get the **_signature**
+https://github.com/code-423n4/2022-12-tigris/blob/main/contracts/Trading.sol#L166
+I mean this one here 
+https://github.com/code-423n4/2022-12-tigris/blob/main/test/07.Trading.js#L180-L182
+sorry I'm not familiar with js
+@GainsGoblin
+
+
+[12/10/2022 17:35] gainsgoblin
+https://github.com/code-423n4/2022-12-tigris/blob/main/test/07.Trading.js#L194
+This is the data that gets hashed and signed, if that's what you're asking?
+
+{Reactions}
+✅ 
+
+[12/10/2022 17:37] gainsgoblin
+It's the data in PriceData
+
+
+[12/10/2022 19:44] aphak5010
+External libraries are out of scope. But are issues that arise from how the in-scope contracts make use of external libraries in scope?
+
+
+[12/10/2022 20:01] gainsgoblin
+Yes if they affect the in-scope contracts
+
+{Reactions}
+👍 
+
+[12/11/2022 06:23] lukejohn_
+Any architecture diagram?
+
+{Reactions}
+💯 
+
+[12/11/2022 09:13] gainsgoblin
+Sorry, we dont have one atm
+
+
+[12/11/2022 16:07] faithxia
+@GainsGoblin hello, had a question about the `Position` contract.
+
+Inside `updateFunding()`, what does the boolean value in the `accInterestPerOi` denote? Is it the long vs short Oi (i.e false = short, true = long)?
+
+For reference:
+```
+mapping(uint256 => mapping(address => mapping(bool => int256)))
+    private accInterestPerOi;
+
+function updateFunding(
+    // ...
+) external onlyMinter {
+        if (longOi[_asset][_tigAsset] > 0) {
+            accInterestPerOi[_asset][_tigAsset][true] +=
+                ((((int256(
+                    block.timestamp - lastUpdate[_asset][_tigAsset]
+                ) * fundingDeltaPerSec[_asset][_tigAsset]) * 1e18) /
+                    int256(longOi[_asset][_tigAsset])) *
+                    int256(1e10 - vaultFundingPercent[_asset][_tigAsset])) /
+                1e10;
+        }
+        // ...
+    } else if (longOi[_asset][_tigAsset] > shortOi[_asset][_tigAsset]) {
+        // ...
+    }
+    // ...
+}
+```
+
+
+[12/11/2022 16:08] gainsgoblin
+yes, its long and short
+
+
+[12/11/2022 16:08] faithxia
+ok thanks!
+
+
+[12/12/2022 02:50] chaduke#3730
+Question, why _fees.referralFees*2 here: https://github.com/code-423n4/2022-12-tigris/blob/main/contracts/Trading.sol#L717
+
+{Embed}
+https://github.com/code-423n4/2022-12-tigris/blob/main/contracts/Trading.sol
+2022-12-tigris/Trading.sol at main · code-423n4/2022-12-tigris
+Contribute to code-423n4/2022-12-tigris development by creating an account on GitHub.
+Code4rena - ARCHIVE-Q4-2022 - tigris-dec09 [1050447663226691614].txt_Files/36215ba8-c4d3-4682-bc4f-7fa0869d2dcc-89895
+
+
+[12/12/2022 06:58] Franfran#5067
+Answer from the sponsor:
+"How the referral fee works is that the referrer earns the ref fee and the trader gets a fee discount as well. For this reason the subtraction has to be doubled, to prevent extra minting."
+
+{Reactions}
+👍 (3) 
+
+[12/12/2022 11:13] gainsgoblin (pinned)
+Quick disclaimer:
+Don’t use the deployments folder in the auditing process, as the source code of the deployments is different from the code currently being audited.
+
+{Reactions}
+✅ (2) 
+
+[12/12/2022 11:35] cloudellie
+Pinned a message.
+
+
+[12/12/2022 16:44] chaduke#3730
+@Franfranthanks
+
+
+[12/12/2022 16:45] chaduke#3730
+Is this a onetime deal or forever?
+
+
+[12/12/2022 16:52] gainsgoblin
+The referral? Once a trader is referred, they are referred forever.
+
+
+[12/12/2022 19:27] chaduke#3730
+ok, what about the benefit of referral fee and discount for trader?
+
+
+[12/12/2022 19:36] stealthyzzzz
+They are in the docs: https://docs.tigris.trade/protocol/referrals
+
+{Embed}
+https://docs.tigris.trade/protocol/referrals
+Referrals
+
+
+[12/12/2022 20:45] carlitox477
+where can i read more about BondNFT contract?
+
+
+[12/12/2022 21:06] gainsgoblin
+https://gov.tigris.trade/#/proposal/0x2f2d1d63060a4a2f2718ebf86250056d40380dc7162fb4bf5e5c0b5bee49a6f3
+
+This was the proposal for locking, which explains the concept at a high level. BondNFT is the receipt NFT you get for locking.
+
+{Reactions}
+thankyou 
+
+[12/12/2022 21:06] gainsgoblin
+That's all the info I have available that I can provide for it.
+
+
+[12/13/2022 14:39] carlitox477
+I've sent you a DM
+
+{Reactions}
+👍 
+
+[12/14/2022 12:59] tchkvsky
+@GainsGoblin  Sent you a DM
+
+{Reactions}
+👍 
+
+[12/14/2022 13:10] un_for_given
+is there any document which could explain the calculations of funding and other stuff?
+
+
+[12/14/2022 13:10] gainsgoblin
+https://docs.tigris.trade/protocol/trading-and-fees/funding-fees
+
+
+[12/14/2022 16:19] gz627
+@GainsGoblin hello, what is `orderType` of struct Trade?
+
+
+[12/14/2022 16:20] faithxia
+It's the type of order you see in leveraged trading. 0 = Market Order, 1 = Limit Order, 2 = Stop Order
+
+{Reactions}
+👍 (3) 
+
+[12/14/2022 16:21] gz627
+@Faith Thanks!
+
+
+[12/14/2022 16:21] faithxia
+np
+
+
+[12/14/2022 19:06] ladboy233
+May I ask in what roles the layerZero protocol play in the Tigris trading?
+
+
+[12/14/2022 19:07] ladboy233
+I see that Tigris trading is multi-chain.
+
+
+[12/14/2022 19:07] ladboy233
+Are each blockchain's smart contract independent between each other?
+
+
+[12/14/2022 19:07] ladboy233
+There is no cross-chain request?
+
+
+[12/14/2022 19:07] gainsgoblin
+Only bridging GovNFT
+
+
+[12/14/2022 19:07] ladboy233
+Oh ok. Which is out of scope for this contest.
+
+
+[12/14/2022 19:07] gainsgoblin
+It's not
+
+
+[12/14/2022 19:08] gainsgoblin
+GovNFT.sol is in scope
+
+
+[12/14/2022 19:08] ladboy233
+AH ok
+
+
+[12/14/2022 19:08] ladboy233
+Yeah I see. LayerZero part and GovNFT is in scope.
+
+
+[12/14/2022 19:09] ladboy233
+:chefskiss:
+
+
+[12/14/2022 19:17] faithxia
+@GainsGoblin out of curiosity, who is the owner of the `Trading` contract? Is it the `GovNFT` contract?
+
+
+[12/14/2022 19:28] faithxia
+I checked the deployment of the contract on Polygon, and looks like its a multisig Gnosis wallet, is that right? Or rather, does that apply to all chains these contracts will be deployed on?
+
+
+[12/14/2022 19:29] gainsgoblin
+Yes its a multisig
+
+{Reactions}
+👍 
+
+[12/14/2022 23:33] acegawd
+DM @GainsGoblin
+
+{Reactions}
+👍 
+
+[12/15/2022 04:20] chaduke#3730
+how many StableVaults are deployed in practice?
+
+
+[12/15/2022 10:13] gainsgoblin
+Three would be deployed
+
+
+[12/15/2022 16:10] mookim
+it seems stable vault can be used as a zero-cost stable coin swap dex? if multiple stable coins are added
+
+
+[12/15/2022 16:22] gainsgoblin
+It could be yeah
+
+
+[12/15/2022 16:55] chaduke#3730
+yup, nice benefit
+
+
+[12/15/2022 21:17] carlitox477
+@GainsGoblin I've sent you a DM
+
+{Reactions}
+👍 
+
+[12/15/2022 22:33] acegawd
+Dmed @GainsGoblin
+
+{Reactions}
+👍 
+
+[12/16/2022 03:39] chaduke#3730
+can you explain the notions of feeMultiplier and baseFundingRate;? What values are typical for them?
+
+
+[12/16/2022 03:57] chaduke#3730
+Thanks
+
+
+[12/16/2022 07:20] carlitox477
+Is there any sponsor online?
+
+
+[12/16/2022 07:45] chaduke#3730
+a hard project
+
+{Reactions}
+🍆 (2) 
+
+[12/16/2022 09:44] gainsgoblin
+feeMultiplier would normally be 1e10 and baseFundingRate would be 5e9
+
+
+[12/16/2022 09:44] gainsgoblin
+Yes
+
+
+[12/16/2022 12:07] 0xsomeone
+@GainsGoblin what is the default block delay that will be enforced for opening and closing for `blockDelayPassed` in `Trading`?
+
+
+[12/16/2022 12:17] gainsgoblin
+2x the time of validSignatureTimer measured in blocks
+
+{Reactions}
+🙏 
+
+[12/16/2022 16:06] chaduke#3730
+thanks
+
+
+[12/16/2022 16:29] carlitox477
+@GainsGoblin I've just sent you a DM
+
+{Reactions}
+👍 
+
+[12/16/2022 18:28] carlitox477
+I sent you another DM @GainsGoblin
+
+{Reactions}
+👍 
+
+[12/16/2022 20:02] C4
+**🚨 CONTEST ALERT**
+
+@🐺wardens The **Tigris Trade** contest is now closed! Huge thanks to everyone who participated 🔍, whether you submitted a finding or not.
+
+What's next: The sponsor team and judge will review the findings over the next couple of weeks. Keep an eye on #📢announcements for regular updates on how the contest is progressing through awarding 🤑🏆, judging 🧑‍⚖️ and reporting 📜. Feel free to ping a gardener if you have questions along the way!
+
+
+[12/16/2022 20:13] chaduke#3730
+good luck to all, I tried my best
+
+{Reactions}
+💪 (20) 
+
+[01/15/2023 10:52] stealthyzzzz
+👁️👁️
+
+{Reactions}
+👀 (2) 
+
+[01/15/2023 15:13] chaduke#3730
+soon ?
+
+{Reactions}
+👀 (2) 
+
+[01/15/2023 15:50] ladboy233
+👀
+
+{Reactions}
+👀 (4) 
+
+[01/16/2023 05:45] 0x4non
+👁️
+
+{Reactions}
+🏓 (2) 
+
+[01/16/2023 12:28] alextheentreprenerd
+Soon to triage but not too soon
+
+{Reactions}
+👀 (6) 😰 (2) 
+
+[01/20/2023 18:53] matin6517
+👀
+
+
+[01/23/2023 10:20] alextheentreprenerd
+Sent to triage
+
+{Reactions}
+👍 (9) 
+
+[01/23/2023 20:31] xyzbtchunt
+👁👁
+
+
+[01/26/2023 09:56] .sha256yan
+👀 ?
+
+
+[01/26/2023 12:07] alextheentreprenerd
+
+
+{Attachments}
+Code4rena - ARCHIVE-Q4-2022 - tigris-dec09 [1050447663226691614].txt_Files/Screenshot_2023-01-26_at_13.07.01-C2067.png
+
+{Reactions}
+👀 (12) 🫡 (3) pepesit (4) praisethesun (3) 
+
+[01/27/2023 17:28] xyzbtchunt
+:thisisfine: :thisisfine: :thisisfine:
+
+
+[01/27/2023 22:10] carlitox477
+
+
+{Attachments}
+Code4rena - ARCHIVE-Q4-2022 - tigris-dec09 [1050447663226691614].txt_Files/20230127_191007-18E79.jpg
+
+{Reactions}
+👀 (6) 
+
+[01/28/2023 00:10] chaduke#3730
+soon
+
+
+[01/28/2023 07:46] makeouthill6
+👀
+
+
+[01/31/2023 21:02] xyzbtchunt
+:thisisfine: :thisisfine: :thisisfine:
+
+
+[01/31/2023 23:24] 0x4non
+
+
+{Attachments}
+Code4rena - ARCHIVE-Q4-2022 - tigris-dec09 [1050447663226691614].txt_Files/image0-A5F75.gif
+
+{Reactions}
+😂 (3) 
+
+[01/31/2023 23:50] telcontar
+:comeonman:
+
+
+[02/01/2023 04:39] lukejohn_
+https://tenor.com/view/love-languages-hearts-of-happiness-gif-25122173
+
+{Embed}
+https://tenor.com/view/love-languages-hearts-of-happiness-gif-25122173
+Code4rena - ARCHIVE-Q4-2022 - tigris-dec09 [1050447663226691614].txt_Files/love-languages-0C843.png
+
+
+[02/01/2023 14:17] un_for_given
+https://github.com/code-423n4/code423n4.com/pull/7237/files
+
+{Embed}
+https://github.com/code-423n4/code423n4.com/pull/7237/files
+Update Leaderboard - January 31st by liveactionllama · Pull Request...
+Code4rena - ARCHIVE-Q4-2022 - tigris-dec09 [1050447663226691614].txt_Files/98446738-1A1F9
+
+
+[02/01/2023 14:31] un_for_given
+11 High and 24 Medium.
+
+{Reactions}
+👍 (7) 
+
+[02/01/2023 17:46] itsmetechjay
+:C4Keycap:  💸 🎉 Awards for** Tigris Trade**:
+
+$11,888.95 USDC » @KingNFT 
+$10,938.79 USDC » @Bobface 
+$5,519.19 USDC » @unforgiven 
+$4,709.84 USDC » @hansfriese 
+$4,080.60 USDC » @0x52 
+$3,067.23 USDC » @__141345__ 
+$2,923.42 USDC » @0xA5DF 
+$2,380.33 USDC » @carlitox477 
+$2,086.68 USDC » @0xdeadbeef0x 
+$2,083.78 USDC » @IllIllI 
+$1,790.07 USDC » @HollaDieWaldfee 
+$1,737.79 USDC » @HE1M 
+$1,643.49 USDC » @bin2chen 
+$1,588.98 USDC » @brgltd 
+$1,431.34 USDC » @rvierdiiev 
+$1,260.17 USDC » @noot 
+$1,223.44 USDC » @0xSmartContract 
+$1,009.90 USDC » @code-cipher 
+$939.60 USDC » @0Kage 
+$740.65 USDC » @hihen 
+$662.69 USDC » @ReyAdmirado 
+$662.69 USDC » @c3phas 
+$662.69 USDC » @JC
+$638.11 USDC » @chaduke 
+$618.80 USDC » @cccz 
+$579.67 USDC » @koxuan 
+$519.35 USDC » @Ruhum 
+$456.10 USDC » @0xsomeone 
+$442.95 USDC » @Jeiwan 
+$403.84 USDC » @anon 
+$372.19 USDC » @8olidity 
+$361.03 USDC » @rbserver 
+$340.79 USDC » UniversalCrypto (@amaechi eth, @tettehnetworks)
+$334.59 USDC » @Rotcivegaf 
+$326.59 USDC » @wait 
+$297.05 USDC » @stealthyz 
+$271.93 USDC » @0xbepresent 
+$271.33 USDC » @Critical 
+$261.60 USDC » @minhtrng 
+$231.18 USDC » @Madalad 
+$220.11 USDC » @Deivitto 
+$207.50 USDC » @0xNazgul 
+$180.39 USDC » @Faith 
+$165.62 USDC » @masa 
+$163.00 USDC » @ali_shehab 
+$163.00 USDC » @kaliberpoziomka8552 
+$163.00 USDC » @sha256yan 
+$157.67 USDC » @joestakey 
+$147.12 USDC » @Tointer 
+$145.98 USDC » @chrisdior4 
+$134.51 USDC » @aviggiano 
+$133.36 USDC » @0xhacksmithh 
+$133.36 USDC » @Samater 
+$133.36 USDC » Secureverse (@imkapadia, @Nsecv, @leosathya)
+$124.22 USDC » @ermaniwe 
+$118.88 USDC » @Deekshith99 
+$110.68 USDC » @mookim 
+$100.62 USDC » @Deleted User 
+$73.21 USDC » @kwhuo68 
+$72.06 USDC » @Rolezn 
+$72.06 USDC » @eierina 
+$61.52 USDC » @imare 
+$40.75 USDC » @csanuragjain 
+$32.20 USDC » @orion 
+$25.45 USDC » @Deleted User 
+$19.03 USDC » @yjrwkk 
+$14.90 USDC » @Englave 
+$13.76 USDC » @pwnforce 
+$13.76 USDC » @izhelyazkov 
+$13.76 USDC » @Dinesh11G 
+$13.76 USDC » @ak1
+$13.76 USDC » Avci (@0xArshia, @0xdanial)
+$12.84 USDC » @gzeon 
+$12.84 USDC » @ladboy233小伙子 
+$11.69 USDC » @fs0c 
+$11.69 USDC » @yixxas 
+$1.15 USDC » @JohnnyTime 
+$1.15 USDC » @gz627 
+$1.15 USDC » SmartSek (@hake | SmartSek, @Django | Saloon Finance)
+$1.15 USDC » @jadezti 
+$1.15 USDC » @Mukund 
+$1.15 USDC » @Philogy 
+$1.15 USDC » @peanuts 
+$1.15 USDC » @francoHacker 
+
+🏁 Findings summary
+---------------------------
+High risk findings: 56 total, 11 unique
+Med risk findings: 140 total, 24 unique
+Gas reports: 7
+QA reports: 12
+
+Awards will be distributed on Polygon within the next 1-2 weeks. Congratulations, everyone! 💸 💸 💸
+
+*If you participated in this contest and don’t see your name on this list, please wait until the report is published and the findings repo is made public to check on your submissions.*
+
+{Reactions}
+🎉 (3) 
+
+[02/01/2023 17:55] chaduke#3730
+cheers to all!
+
+{Reactions}
+🎉 (10) hi5 (4) 
+
+[02/01/2023 17:55] ladboy233
+🥲
+
+{Reactions}
+🥲 (2) hi5 
+
+[02/01/2023 18:13] carlitox477
+First +2K in one single contest 😄
+
+{Reactions}
+👏 (19) Clap (6) 
+
+[02/01/2023 18:18] 0xhacksmithh
+some get 133, some get 176, and some get 230 for H-08, would someone pls explain how this prize calculation works
+
+
+[02/01/2023 18:36] ali_shehab.
+congrats. Me getting back, I got one bug before and now trying to get again to contests.
+
+
+[02/01/2023 18:43] carlitox477
+Thank you!!!! just keep participating and learning and I'm sure you will get lots of bugs 😄
+
+
+[02/01/2023 18:44] ali_shehab.
+Yes yes 🙂
+
+
+[02/01/2023 18:46] noot99
+my first >$1k yay! congrats everyone 🥰
+
+{Reactions}
+🎉 (13) cheers_badger (4) Clap (7) PU_pepeCatHug (3) 
+
+[02/01/2023 18:59] telcontar
+gg
+
+
+[02/01/2023 19:04] 0xhaz
+:hecute:
+
+
+[02/01/2023 19:04] 0xhaz
+:hecute:
+
+
+[02/01/2023 19:04] 0xhaz
+Thanks everyone
+
+
+[02/01/2023 19:06] 0xdeadbeef0x
+Seems like for h-08 176 would be the 30% share bonus for best report and 133 is the base. I don't see 230
+
+{Reactions}
+hi5 (2) 
+
+[02/01/2023 19:13] 0xhacksmithh
+thanks
+
+
+[02/01/2023 20:33] samirotas
+Que grande Carlitox a darle más duroo
+
+{Reactions}
+🚀 🐐 
+
+[02/01/2023 20:33] carlitox477
+Gracias 😄
+
+
+[02/01/2023 21:55] rotcivegaf
+Grande carlos!!!
+
+{Reactions}
+🎉 
+
+[02/01/2023 22:10] 0x4non
+grande carlos! felicitaciones!!
+
+{Reactions}
+🎉 
+
+[02/01/2023 22:32] cloudellie
+Huge congrats, Carlito! :hi5:
+
+{Reactions}
+thankyou 
+
+[02/01/2023 22:32] cloudellie
+Big day! Happy for you 🎉
+
+{Reactions}
+❤️ (2) 
+
+[02/04/2023 10:11] 0xsomeone
+Can we see somewhere the assessed findings?
+
+
+[02/04/2023 10:21] 0xsorrynotsorry
+Not untill all the issues are mitigated by the sponsors. Else we would be in a position announcing the zero day vulns for the projects.
+
+{Reactions}
+👍 (2) 
+
+==============================================================
+Exported 125 message(s)
+==============================================================
