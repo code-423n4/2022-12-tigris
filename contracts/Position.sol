@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
@@ -8,14 +8,10 @@ import "./interfaces/IPosition.sol";
 
 contract Position is ERC721Enumerable, MetaContext, IPosition {
 
-    function ownerOf(uint _id) public view override(ERC721, IERC721, IPosition) returns (address) {
-        return ERC721.ownerOf(_id);
-    }
-
     using Counters for Counters.Counter;
-    uint constant public DIVISION_CONSTANT = 1e10; // 100%
+    uint256 constant public DIVISION_CONSTANT = 1e10; // 100%
 
-    mapping(uint => mapping(address => uint)) public vaultFundingPercent;
+    mapping(uint256 => mapping(address => uint)) public vaultFundingPercent;
 
     mapping(address => bool) private _isMinter; // Trading contract should be minter
     mapping(uint256 => Trade) private _trades; // NFT id to Trade
@@ -37,23 +33,35 @@ contract Position is ERC721Enumerable, MetaContext, IPosition {
     mapping(uint256 => mapping(address => uint256)) private longOi;
     mapping(uint256 => mapping(address => uint256)) private shortOi;
 
+    constructor(string memory _setBaseURI, string memory _name, string memory _symbol) ERC721(_name, _symbol) {
+        baseURI = _setBaseURI;
+        _tokenIds.increment();
+    }
+
+    function ownerOf(uint256 _id) public view override(ERC721, IERC721, IPosition) returns (address) {
+        return ERC721.ownerOf(_id);
+    }
+
     function isMinter(address _address) public view returns (bool) { return _isMinter[_address]; }
-    function trades(uint _id) public view returns (Trade memory) {
+    function trades(uint256 _id) public view returns (Trade memory) {
         Trade memory _trade = _trades[_id];
         _trade.trader = ownerOf(_id);
         if (_trade.orderType > 0) return _trade;
         
         int256 _pendingFunding;
-        if (_trade.direction && longOi[_trade.asset][_trade.tigAsset] > 0) {
-            _pendingFunding = (int256(block.timestamp-lastUpdate[_trade.asset][_trade.tigAsset])*fundingDeltaPerSec[_trade.asset][_trade.tigAsset])*1e18/int256(longOi[_trade.asset][_trade.tigAsset]);
-            if (longOi[_trade.asset][_trade.tigAsset] > shortOi[_trade.asset][_trade.tigAsset]) {
+        uint256 _longOi = longOi[_trade.asset][_trade.tigAsset];
+        uint256 _shortOi = shortOi[_trade.asset][_trade.tigAsset];
+
+        if (_trade.direction && _longOi > 0) {
+            _pendingFunding = (int256(block.timestamp-lastUpdate[_trade.asset][_trade.tigAsset])*fundingDeltaPerSec[_trade.asset][_trade.tigAsset])*1e18/int256(_longOi);
+            if (_longOi > _shortOi) {
                 _pendingFunding = -_pendingFunding;
             } else {
                 _pendingFunding = _pendingFunding*int256(1e10-vaultFundingPercent[_trade.asset][_trade.tigAsset])/1e10;
             }
-        } else if (shortOi[_trade.asset][_trade.tigAsset] > 0) {
-            _pendingFunding = (int256(block.timestamp-lastUpdate[_trade.asset][_trade.tigAsset])*fundingDeltaPerSec[_trade.asset][_trade.tigAsset])*1e18/int256(shortOi[_trade.asset][_trade.tigAsset]);
-            if (shortOi[_trade.asset][_trade.tigAsset] > longOi[_trade.asset][_trade.tigAsset]) {
+        } else if (_shortOi > 0) {
+            _pendingFunding = (int256(block.timestamp-lastUpdate[_trade.asset][_trade.tigAsset])*fundingDeltaPerSec[_trade.asset][_trade.tigAsset])*1e18/int256(_shortOi);
+            if (_shortOi > _longOi) {
                 _pendingFunding = -_pendingFunding;
             } else {
                 _pendingFunding = _pendingFunding*int256(1e10-vaultFundingPercent[_trade.asset][_trade.tigAsset])/1e10;
@@ -64,19 +72,14 @@ contract Position is ERC721Enumerable, MetaContext, IPosition {
         return _trade;
     }
     function openPositions() public view returns (uint256[] memory) { return _openPositions; }
-    function openPositionsIndexes(uint _id) public view returns (uint256) { return _openPositionsIndexes[_id]; }
-    function assetOpenPositions(uint _asset) public view returns (uint256[] memory) { return _assetOpenPositions[_asset]; }
-    function assetOpenPositionsIndexes(uint _asset, uint _id) public view returns (uint256) { return _assetOpenPositionsIndexes[_asset][_id]; }
-    function limitOrders(uint _asset) public view returns (uint256[] memory) { return _limitOrders[_asset]; }
-    function limitOrderIndexes(uint _asset, uint _id) public view returns (uint256) { return _limitOrderIndexes[_asset][_id]; }
+    function openPositionsIndexes(uint256 _id) public view returns (uint256) { return _openPositionsIndexes[_id]; }
+    function assetOpenPositions(uint256 _asset) public view returns (uint256[] memory) { return _assetOpenPositions[_asset]; }
+    function assetOpenPositionsIndexes(uint256 _asset, uint256 _id) public view returns (uint256) { return _assetOpenPositionsIndexes[_asset][_id]; }
+    function limitOrders(uint256 _asset) public view returns (uint256[] memory) { return _limitOrders[_asset]; }
+    function limitOrderIndexes(uint256 _asset, uint256 _id) public view returns (uint256) { return _limitOrderIndexes[_asset][_id]; }
 
     Counters.Counter private _tokenIds;
     string public baseURI;
-
-    constructor(string memory _setBaseURI, string memory _name, string memory _symbol) ERC721(_name, _symbol) {
-        baseURI = _setBaseURI;
-        _tokenIds.increment();
-    }
 
     function _baseURI() internal override view returns (string memory) {
         return baseURI;
@@ -94,30 +97,35 @@ contract Position is ERC721Enumerable, MetaContext, IPosition {
     * @param _longOi long open interest
     * @param _shortOi short open interest
     * @param _baseFundingRate base funding rate of a pair
-    * @param _vaultFundingPercent percent of earned funding going to the stablevault
+    * @param _vaultFundingPercent percent of earned funding going to the stableVault
     */
-    function updateFunding(uint256 _asset, address _tigAsset, uint256 _longOi, uint256 _shortOi, uint256 _baseFundingRate, uint _vaultFundingPercent) external onlyMinter {
-        if(longOi[_asset][_tigAsset] < shortOi[_asset][_tigAsset]) {
-            if (longOi[_asset][_tigAsset] > 0) {
-                accInterestPerOi[_asset][_tigAsset][true] += ((int256(block.timestamp-lastUpdate[_asset][_tigAsset])*fundingDeltaPerSec[_asset][_tigAsset])*1e18/int256(longOi[_asset][_tigAsset]))*int256(1e10-vaultFundingPercent[_asset][_tigAsset])/1e10;
-            }
-            accInterestPerOi[_asset][_tigAsset][false] -= (int256(block.timestamp-lastUpdate[_asset][_tigAsset])*fundingDeltaPerSec[_asset][_tigAsset])*1e18/int256(shortOi[_asset][_tigAsset]);
+    function updateFunding(uint256 _asset, address _tigAsset, uint256 _longOi, uint256 _shortOi, uint256 _baseFundingRate, uint256 _vaultFundingPercent) external onlyMinter {
+        uint256 _longOiAsset = longOi[_asset][_tigAsset];
+        uint256 _shortOiAsset = shortOi[_asset][_tigAsset];
+        uint256 _lastUpdate = lastUpdate[_asset][_tigAsset];
+        int256 _fundingDeltaPerSec = fundingDeltaPerSec[_asset][_tigAsset];
 
-        } else if(longOi[_asset][_tigAsset] > shortOi[_asset][_tigAsset]) {
-            accInterestPerOi[_asset][_tigAsset][true] -= (int256(block.timestamp-lastUpdate[_asset][_tigAsset])*fundingDeltaPerSec[_asset][_tigAsset])*1e18/int256(longOi[_asset][_tigAsset]);
-            if (shortOi[_asset][_tigAsset] > 0) {
-                accInterestPerOi[_asset][_tigAsset][false] += ((int256(block.timestamp-lastUpdate[_asset][_tigAsset])*fundingDeltaPerSec[_asset][_tigAsset])*1e18/int256(shortOi[_asset][_tigAsset]))*int256(1e10-vaultFundingPercent[_asset][_tigAsset])/1e10;
+        if(_longOiAsset < _shortOiAsset) {
+            if (_longOiAsset > 0) {
+                accInterestPerOi[_asset][_tigAsset][true] += ((int256(block.timestamp-_lastUpdate)*_fundingDeltaPerSec)*1e18/int256(_longOiAsset))*int256(1e10-vaultFundingPercent[_asset][_tigAsset])/1e10;
+            }
+            accInterestPerOi[_asset][_tigAsset][false] -= (int256(block.timestamp-_lastUpdate)*_fundingDeltaPerSec)*1e18/int256(_shortOiAsset);
+
+        } else if(_longOiAsset > _shortOiAsset) {
+            accInterestPerOi[_asset][_tigAsset][true] -= (int256(block.timestamp-_lastUpdate)*_fundingDeltaPerSec)*1e18/int256(_longOiAsset);
+            if (_shortOiAsset > 0) {
+                accInterestPerOi[_asset][_tigAsset][false] += ((int256(block.timestamp-_lastUpdate)*_fundingDeltaPerSec)*1e18/int256(_shortOiAsset))*int256(1e10-vaultFundingPercent[_asset][_tigAsset])/1e10;
             }
         }
         lastUpdate[_asset][_tigAsset] = block.timestamp;
         int256 _oiDelta;
         if (_longOi > _shortOi) {
-            _oiDelta = int256(_longOi)-int256(_shortOi);
+            unchecked { _oiDelta = int256(_longOi)-int256(_shortOi); }
         } else {
-            _oiDelta = int256(_shortOi)-int256(_longOi);
+            unchecked { _oiDelta = int256(_shortOi)-int256(_longOi); }
         }
         
-        fundingDeltaPerSec[_asset][_tigAsset] = (_oiDelta*int256(_baseFundingRate)/int256(DIVISION_CONSTANT))/31536000;
+        fundingDeltaPerSec[_asset][_tigAsset] = (_oiDelta*int256(_baseFundingRate)/int256(DIVISION_CONSTANT))/31_536_000;
         longOi[_asset][_tigAsset] = _longOi;
         shortOi[_asset][_tigAsset] = _shortOi;
         vaultFundingPercent[_asset][_tigAsset] = _vaultFundingPercent;
@@ -131,7 +139,7 @@ contract Position is ERC721Enumerable, MetaContext, IPosition {
     function mint(
         MintTrade memory _mintTrade
     ) external onlyMinter {
-        uint newTokenID = _tokenIds.current();
+        uint256 newTokenID = _tokenIds.current();
 
         Trade storage newTrade = _trades[newTokenID];
         newTrade.margin = _mintTrade.margin;
@@ -145,7 +153,6 @@ contract Position is ERC721Enumerable, MetaContext, IPosition {
         newTrade.id = newTokenID;
         newTrade.tigAsset = _mintTrade.tigAsset;
 
-        _safeMint(_mintTrade.account, newTokenID);
         if (_mintTrade.orderType > 0) {
             _limitOrders[_mintTrade.asset].push(newTokenID);
             _limitOrderIndexes[_mintTrade.asset][newTokenID] = _limitOrders[_mintTrade.asset].length-1;
@@ -158,6 +165,7 @@ contract Position is ERC721Enumerable, MetaContext, IPosition {
             _assetOpenPositionsIndexes[_mintTrade.asset][newTokenID] = _assetOpenPositions[_mintTrade.asset].length-1;
         }
         _tokenIds.increment();
+        _mint(_mintTrade.account, newTokenID);
     }
 
     /**
@@ -173,7 +181,7 @@ contract Position is ERC721Enumerable, MetaContext, IPosition {
         _trade.orderType = 0;
         _trade.price = _price;
         _trade.margin = _newMargin;
-        uint _asset = _trade.asset;
+        uint256 _asset = _trade.asset;
         _limitOrderIndexes[_asset][_limitOrders[_asset][_limitOrders[_asset].length-1]] = _limitOrderIndexes[_asset][_id];
         _limitOrders[_asset][_limitOrderIndexes[_asset][_id]] = _limitOrders[_asset][_limitOrders[_asset].length-1];
         delete _limitOrderIndexes[_asset][_id];
@@ -184,7 +192,7 @@ contract Position is ERC721Enumerable, MetaContext, IPosition {
         _assetOpenPositions[_asset].push(_id);
         _assetOpenPositionsIndexes[_asset][_id] = _assetOpenPositions[_asset].length-1;
 
-        initId[_id] = accInterestPerOi[_trade.asset][_trade.tigAsset][_trade.direction]*int256(_trade.margin*_trade.leverage/1e18)/1e18;
+        initId[_id] = accInterestPerOi[_asset][_trade.tigAsset][_trade.direction]*int256(_newMargin*_trade.leverage/1e18)/1e18;
     }
 
     /**
@@ -239,7 +247,7 @@ contract Position is ERC721Enumerable, MetaContext, IPosition {
     * @param _id position id
     * @param _tpPrice tp price
     */
-    function modifyTp(uint _id, uint _tpPrice) external onlyMinter {
+    function modifyTp(uint256 _id, uint256 _tpPrice) external onlyMinter {
         _trades[_id].tpPrice = _tpPrice;
     }
 
@@ -249,7 +257,7 @@ contract Position is ERC721Enumerable, MetaContext, IPosition {
     * @param _id position id
     * @param _slPrice sl price
     */
-    function modifySl(uint _id, uint _slPrice) external onlyMinter {
+    function modifySl(uint256 _id, uint256 _slPrice) external onlyMinter {
         _trades[_id].slPrice = _slPrice;
     }
 
@@ -257,9 +265,9 @@ contract Position is ERC721Enumerable, MetaContext, IPosition {
     * @dev Burns an NFT and it's data
     * @param _id ID of the trade
     */
-    function burn(uint _id) external onlyMinter {
+    function burn(uint256 _id) external onlyMinter {
         _burn(_id);
-        uint _asset = _trades[_id].asset;
+        uint256 _asset = _trades[_id].asset;
         if (_trades[_id].orderType > 0) {
             _limitOrderIndexes[_asset][_limitOrders[_asset][_limitOrders[_asset].length-1]] = _limitOrderIndexes[_asset][_id];
             _limitOrders[_asset][_limitOrderIndexes[_asset][_id]] = _limitOrders[_asset][_limitOrders[_asset].length-1];
@@ -279,11 +287,11 @@ contract Position is ERC721Enumerable, MetaContext, IPosition {
         delete _trades[_id];
     }
 
-    function assetOpenPositionsLength(uint _asset) external view returns (uint256) {
+    function assetOpenPositionsLength(uint256 _asset) external view returns (uint256) {
         return _assetOpenPositions[_asset].length;
     }
 
-    function limitOrdersLength(uint _asset) external view returns (uint256) {
+    function limitOrdersLength(uint256 _asset) external view returns (uint256) {
         return _limitOrders[_asset].length;
     }
 
@@ -293,15 +301,15 @@ contract Position is ERC721Enumerable, MetaContext, IPosition {
 
     function userTrades(address _user) external view returns (uint[] memory) {
         uint[] memory _ids = new uint[](balanceOf(_user));
-        for (uint i=0; i<_ids.length; i++) {
+        for (uint256 i=0; i<_ids.length; i++) {
             _ids[i] = tokenOfOwnerByIndex(_user, i);
         }
         return _ids;
     }
 
-    function openPositionsSelection(uint _from, uint _to) external view returns (uint[] memory) {
+    function openPositionsSelection(uint256 _from, uint256 _to) external view returns (uint[] memory) {
         uint[] memory _ids = new uint[](_to-_from);
-        for (uint i=0; i<_ids.length; i++) {
+        for (uint256 i=0; i<_ids.length; i++) {
             _ids[i] = _openPositions[i+_from];
         }
         return _ids;
@@ -317,7 +325,7 @@ contract Position is ERC721Enumerable, MetaContext, IPosition {
     }
 
     // META-TX
-    function _msgSender() internal view override(Context, MetaContext) returns (address sender) {
+    function _msgSender() internal view override(Context, MetaContext) returns (address) {
         return MetaContext._msgSender();
     }
     function _msgData() internal view override(Context, MetaContext) returns (bytes calldata) {

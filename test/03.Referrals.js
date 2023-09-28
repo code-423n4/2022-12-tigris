@@ -38,6 +38,9 @@ describe("Referrals", function () {
   });
 
   describe("Referral system", function () {
+    it("Creating a referral code with zero hash should revert", async function() {
+      await expect(referrals.connect(user).createReferralCode(ethers.constants.HashZero)).to.be.revertedWith("Zero hash");
+    });
     it("Creating a referral code", async function() {
       await referrals.connect(user).createReferralCode(ethers.utils.id("testcode"));
       expect(await referrals.getReferral(ethers.utils.id("testcode"))).to.equal(user.address);

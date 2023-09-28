@@ -19,12 +19,12 @@ contract LZEndpointMock is ILayerZeroEndpoint {
     uint16 public mockChainId;
     address payable public mockOracle;
     address payable public mockRelayer;
-    uint public mockBlockConfirmations;
+    uint256 public mockBlockConfirmations;
     uint16 public mockLibraryVersion;
-    uint public mockStaticNativeFee;
+    uint256 public mockStaticNativeFee;
     uint16 public mockLayerZeroVersion;
-    uint public nativeFee;
-    uint public zroFee;
+    uint256 public nativeFee;
+    uint256 public zroFee;
     bool nextMsgBLocked;
 
     struct StoredPayload {
@@ -59,7 +59,7 @@ contract LZEndpointMock is ILayerZeroEndpoint {
     }
 
     // mock helper to set the value returned by `estimateNativeFees`
-    function setEstimatedFees(uint _nativeFee, uint _zroFee) public {
+    function setEstimatedFees(uint256 _nativeFee, uint256 _zroFee) public {
         nativeFee = _nativeFee;
         zroFee = _zroFee;
     }
@@ -94,8 +94,8 @@ contract LZEndpointMock is ILayerZeroEndpoint {
 
         // Mock the relayer paying the dstNativeAddr the amount of extra native token
         {
-            uint extraGas;
-            uint dstNative;
+            uint256 extraGas;
+            uint256 dstNative;
             address dstNativeAddr;
             assembly {
                 extraGas := mload(add(_adapterParams, 34))
@@ -138,7 +138,7 @@ contract LZEndpointMock is ILayerZeroEndpoint {
                 msgs.push(newMsg);
 
                 // shift all the indexes up for pop()
-                for (uint i = 0; i < msgs.length - 1; i++) {
+                for (uint256 i = 0; i < msgs.length - 1; i++) {
                     msgs[i + 1] = msgs[i];
                 }
 
@@ -174,7 +174,7 @@ contract LZEndpointMock is ILayerZeroEndpoint {
     // @param _payload - the custom message to send over LayerZero
     // @param _payInZRO - if false, user app pays the protocol fee in native token
     // @param _adapterParam - parameters for the adapter service, e.g. send some dust native token to dstChain
-    function estimateFees(uint16, address, bytes memory _payload, bool, bytes memory) external view override returns (uint _nativeFee, uint _zroFee) {
+    function estimateFees(uint16, address, bytes memory _payload, bool, bytes memory) external view override returns (uint256 _nativeFee, uint256 _zroFee) {
         _nativeFee = nativeFee * _payload.length;
         _zroFee = zroFee;
     }
@@ -207,7 +207,7 @@ contract LZEndpointMock is ILayerZeroEndpoint {
         uint16, /*_version*/
         uint16, /*_chainId*/
         address, /*_ua*/
-        uint /*_configType*/
+        uint256 /*_configType*/
     ) external pure override returns (bytes memory) {
         return "";
     }

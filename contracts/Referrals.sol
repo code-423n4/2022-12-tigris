@@ -1,5 +1,5 @@
-//SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IReferrals.sol";
@@ -18,6 +18,7 @@ contract Referrals is Ownable, IReferrals {
     * @param _hash hash of the string code
     */
     function createReferralCode(bytes32 _hash) external {
+        require(_hash != bytes32(0), "Zero hash");
         require(_referral[_hash] == address(0), "Referral code already exists");
         _referral[_hash] = _msgSender();
         emit ReferralCreated(_msgSender(), _hash);
@@ -65,12 +66,12 @@ contract Referrals is Ownable, IReferrals {
     ) external onlyOwner {
         require(!isInit);
         isInit = true;
-        uint _codeOwnersL = _codeOwners.length;
-        uint _referredAL = _referredA.length;
-        for (uint i=0; i<_codeOwnersL; i++) {
+        uint256 _codeOwnersL = _codeOwners.length;
+        uint256 _referredAL = _referredA.length;
+        for (uint256 i=0; i<_codeOwnersL; i++) {
             _referral[_ownedCodes[i]] = _codeOwners[i];
         }
-        for (uint i=0; i<_referredAL; i++) {
+        for (uint256 i=0; i<_referredAL; i++) {
             _referred[_referredA[i]] = _referredTo[i];
         }
     }

@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.18;
 
 interface IPosition {
 
     struct Trade {
-        uint margin;
-        uint leverage;
-        uint asset;
+        uint256 margin;
+        uint256 leverage;
+        uint256 asset;
         bool direction;
-        uint price;
-        uint tpPrice;
-        uint slPrice;
-        uint orderType;
+        uint256 price;
+        uint256 tpPrice;
+        uint256 slPrice;
+        uint256 orderType;
         address trader;
-        uint id;
+        uint256 id;
         address tigAsset;
         int accInterest;
     }
@@ -43,11 +43,11 @@ interface IPosition {
     function limitOrderIndexes(uint256 _asset, uint256 _id) external view returns (uint256);
     function assetOpenPositionsLength(uint256 _asset) external view returns (uint256);
     function limitOrdersLength(uint256 _asset) external view returns (uint256);
-    function ownerOf(uint _id) external view returns (address);
+    function ownerOf(uint256 _id) external view returns (address);
     function mint(MintTrade memory _mintTrade) external;
-    function burn(uint _id) external;
-    function modifyTp(uint _id, uint _tpPrice) external;
-    function modifySl(uint _id, uint _slPrice) external;
+    function burn(uint256 _id) external;
+    function modifyTp(uint256 _id, uint256 _tpPrice) external;
+    function modifySl(uint256 _id, uint256 _slPrice) external;
     function getCount() external view returns (uint);
     function updateFunding(uint256 _asset, address _tigAsset, uint256 _longOi, uint256 _shortOi, uint256 _baseFundingRate, uint256 _vaultFundingPercent) external;
     function setAccInterest(uint256 _id) external;

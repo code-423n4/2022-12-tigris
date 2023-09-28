@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./utils/MetaContext.sol";
 import "./interfaces/IStableVault.sol";
 
@@ -33,6 +32,7 @@ contract StableVault is MetaContext, IStableVault {
     address public immutable stable;
 
     constructor(address _stable) {
+        require(_stable != address(0), "BadConstructor");
         stable = _stable;
     }
 
@@ -51,7 +51,7 @@ contract StableVault is MetaContext, IStableVault {
     }
 
     function depositWithPermit(address _token, uint256 _amount, uint256 _deadline, bool _permitMax, uint8 v, bytes32 r, bytes32 s) external {
-        uint _toAllow = _amount;
+        uint256 _toAllow = _amount;
         if (_permitMax) _toAllow = type(uint).max;
         ERC20Permit(_token).permit(_msgSender(), address(this), _toAllow, _deadline, v, r, s);
         deposit(_token, _amount);

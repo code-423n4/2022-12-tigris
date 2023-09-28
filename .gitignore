@@ -103,3 +103,9 @@ dist
 
 # TernJS port file
 .tern-port
+
+#Hardhat files
+artifacts
+.DS_STORE
+solidity-files-cache.json
+typechain

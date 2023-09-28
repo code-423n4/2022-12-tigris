@@ -99,7 +99,7 @@ describe("govnft", function () {
       expect(await govnft.pending(user.getAddress(), StableToken.address)).to.equal(500);
     });
     it("Transferring an NFT with pending delisted rewards should not affect pending rewards", async function () {
-      await govnft.connect(owner).safeTransferMany(user.getAddress(), [2,3]);
+      await govnft.connect(owner).transferMany(user.getAddress(), [2,3]);
       expect(await govnft.balanceOf(owner.getAddress())).to.equal(0);
       expect(await govnft.balanceOf(user.getAddress())).to.equal(3);
       expect(await govnft.pending(owner.getAddress(), StableToken.address)).to.equal(1500);
@@ -107,7 +107,7 @@ describe("govnft", function () {
     });
     it("Transferring an NFT via approval should not affect pending rewards", async function () {
       await govnft.connect(user).approveMany(owner.getAddress(), [1,2,3]);
-      await govnft.connect(owner).safeTransferFromMany(user.getAddress(), owner.getAddress(), [1,2,3]);
+      await govnft.connect(owner).transferFromMany(user.getAddress(), owner.getAddress(), [1,2,3]);
       expect(await govnft.balanceOf(owner.getAddress())).to.equal(3);
       expect(await govnft.balanceOf(user.getAddress())).to.equal(0);
       expect(await govnft.pending(owner.getAddress(), StableToken.address)).to.equal(1500);
@@ -116,8 +116,8 @@ describe("govnft", function () {
     it("Transferring and approving unowned NFTs in any way should revert", async function () {
       await expect(govnft.connect(user).approveMany(owner.getAddress(), [1,2,3])).to.be.revertedWith("ERC721: approval to current owner");
       await expect(govnft.connect(user).approveMany(node.getAddress(), [1,2,3])).to.be.revertedWith("ERC721: approve caller is not token owner or approved for all");
-      await expect(govnft.connect(owner).safeTransferFromMany(user.getAddress(), owner.getAddress(), [1,2,3])).to.be.revertedWith("!Owner");
-      await expect(govnft.connect(user).safeTransferMany(owner.getAddress(), [1,2,3])).to.be.revertedWith("!Owner");
+      await expect(govnft.connect(owner).transferFromMany(user.getAddress(), owner.getAddress(), [1,2,3])).to.be.revertedWith("!Owner");
+      await expect(govnft.connect(user).transferMany(owner.getAddress(), [1,2,3])).to.be.revertedWith("!Owner");
       expect(await govnft.balanceOf(owner.getAddress())).to.equal(3);
       expect(await govnft.balanceOf(user.getAddress())).to.equal(0);
       expect(await govnft.pending(owner.getAddress(), StableToken.address)).to.equal(1500);
@@ -139,7 +139,7 @@ describe("govnft", function () {
       expect(await govnft.pending(owner.getAddress(), StableToken.address)).to.equal(1500);
     });
     it("Transferring NFTs after claiming should not affect pending rewards", async function () {
-      await govnft.connect(owner).safeTransferFromMany(owner.getAddress(), user.getAddress(), [1,2]);
+      await govnft.connect(owner).transferFromMany(owner.getAddress(), user.getAddress(), [1,2]);
       await govnft.connect(user).transferFrom(user.getAddress(), owner.getAddress(), 3);
       expect(await govnft.balanceOf(owner.getAddress())).to.equal(1);
       expect(await govnft.balanceOf(user.getAddress())).to.equal(2);
@@ -183,7 +183,7 @@ describe("govnft", function () {
         await govnft.connect(owner).mintMany(95);
       });
       it("Minting NFT 10001 should revert", async function () {
-        await expect(govnft.connect(owner).mint()).to.be.revertedWith("Exceeds supply");
+        await expect(govnft.connect(owner).mint()).to.be.revertedWith("!supply");
       });
     });
   });
@@ -204,10 +204,18 @@ describe("govnft", function () {
       );
     });
     it("Bridging without paying the bridging fee should revert", async function () {
-      await expect(govnft.connect(owner).crossChain(31337, GovNFT.address, user.getAddress(), [1,3,5])).to.be.revertedWith("Must send enough value to cover messageFee");
+      await expect(govnft.connect(owner).crossChain(31337, GovNFT.address, user.getAddress(), [1,3,5])).to.be.revertedWith("!messageFee");
+    });
+    it("Bridging zero NFTs should revert", async function () {
+      await expect(govnft.connect(owner).crossChain(31337, GovNFT.address, user.getAddress(), [])).to.be.revertedWith("!bridging");
+    });
+    it("Bridging over maxBridge should revert", async function () {
+      await govnft.connect(owner).setMaxBridge(2);
+      await expect(govnft.connect(owner).crossChain(31337, GovNFT.address, user.getAddress(), [1,3,5])).to.be.revertedWith("!max");
+      await govnft.connect(owner).setMaxBridge(20);
     });
     it("Bridging someone else's NFTs should revert", async function () {
-      await expect(govnft.connect(owner).crossChain(31337, GovNFT.address, user.getAddress(), [2])).to.be.revertedWith("Not the owner");
+      await expect(govnft.connect(owner).crossChain(31337, GovNFT.address, user.getAddress(), [2])).to.be.revertedWith("!owner");
     });
     it("Bridging should bridge the correct IDs to the expected target address", async function () {
       await govnft.connect(owner).crossChain(31337, GovNFT.address, user.getAddress(), [1,3,5], {value: 200000});
@@ -216,15 +224,6 @@ describe("govnft", function () {
     });
     it("Non-endpoint address calling lzReceive should revert", async function () {
       await expect(govnft.connect(owner).lzReceive(31337, GovNFT.address, 0, ethers.constants.AddressZero)).to.be.revertedWith("!Endpoint");
-    });
-    it("User calling _bridgeMint should revert", async function () {
-      await expect(govnft.connect(user)._bridgeMint(user.address, 10000)).to.be.revertedWith("NotBridge");
-    });
-    it("Owner calling _bridgeMint should work", async function () {
-      await govnft.connect(owner)._bridgeMint(user.address, 0);
-    });
-    it("Owner calling _bridgeMint should with ID > 10000 should revert", async function () {
-      await expect(govnft.connect(owner)._bridgeMint(user.address, 10001)).to.be.revertedWith("BadID");
     });
     it("Bridging should revert if target address isn't set as trusted", async function () {
       await govnft.connect(owner).setTrustedAddress(31337, GovNFT.address, false);
